@@ -128,17 +128,6 @@ func _process(_delta: float) -> void:
 		_try_attach_pending(gen2)
 
 
-func _portrait_dbg(line: String) -> void:
-	var f := FileAccess.open("D:/game2/rpg/mpqediten64/Work/godot/portrait_dbg.txt", FileAccess.READ_WRITE)
-	if f == null:
-		f = FileAccess.open("D:/game2/rpg/mpqediten64/Work/godot/portrait_dbg.txt", FileAccess.WRITE)
-	if f == null:
-		return
-	f.seek_end()
-	f.store_line(line)
-	f.close()
-
-
 func _try_attach_pending(gen: int) -> void:
 	if gen != _load_gen:
 		return
@@ -150,7 +139,6 @@ func _try_attach_pending(gen: int) -> void:
 	_pending_path = ""
 	var inst := _acquire_model(path)
 	if inst == null:
-		_portrait_dbg("attach null path=%s tid=%s" % [path, tid])
 		_apply_team_bg(tid, owner_id)
 		return
 	if gen != _load_gen:
@@ -171,9 +159,7 @@ func _finish_portrait_setup(gen: int, tid: String, owner_id: int, path: String) 
 	if gen != _load_gen:
 		return
 	if _model_root == null or not is_instance_valid(_model_root):
-		_portrait_dbg("finish abort no root tid=%s" % tid)
 		return
-	_portrait_dbg("finish tid=%s path=%s scale=%s" % [tid, path, str(_model_root.scale)])
 	_normalize_portrait_model_scale(_model_root)
 	_model_root.position = Vector3.ZERO
 	_model_root.rotation = Vector3.ZERO
@@ -184,18 +170,15 @@ func _finish_portrait_setup(gen: int, tid: String, owner_id: int, path: String) 
 	_ensure_portrait_meshes_visible()
 	_fit_camera(_model_root, path)
 	_set_viewport_active(true)
-	var anim_now := ""
-	if _ap != null and is_instance_valid(_ap):
-		anim_now = str(_ap.current_animation)
-	_portrait_dbg("viewport on tid=%s anim=%s" % [tid, anim_now])
 
 
 func _normalize_portrait_model_scale(root: Node3D) -> void:
 	if root == null:
 		return
 	var local := _visual_aabb(root)
-	# peasant_Portrait 等未烘焙 WC3 尺度（顶点 0~200）；战场 GLB 已乘 model_scale。
-	if local.size.length() <= 12.0:
+	# 未缩放的肖像顶点大约 100–300（厘米）。已是米制的建筑大约几米到十几米，
+	# 队色光晕一展开就会超过 12，不能再乘 0.01，否则主城会缩成几厘米，镜头里只剩队色底。
+	if local.size.length() <= 80.0:
 		return
 	root.scale = Vector3.ONE * Wc3Coords.WORLD_SCALE
 
@@ -295,7 +278,6 @@ func _apply_sequence_geoset_draw(root: Node) -> bool:
 		):
 			show_of[leaf] = _track_vec3_at(anim, i, at).length_squared() > 1e-4
 	if show_of.is_empty():
-		_portrait_dbg("geoset tracks empty anim=%s tracks=%d" % [anim_name, anim.get_track_count()])
 		return false
 	var any_show := false
 	for c in root.find_children("*", "MeshInstance3D", true, false):
@@ -312,7 +294,6 @@ func _apply_sequence_geoset_draw(root: Node) -> bool:
 			any_show = true
 		else:
 			mi.visible = false
-	_portrait_dbg("geoset draw any=%s keys=%d g11=%s" % [str(any_show), show_of.size(), str(show_of.get("Geoset_11", "na"))])
 	return any_show
 
 
@@ -475,9 +456,6 @@ func _set_viewport_active(active: bool) -> void:
 		_vp_host.visible = active
 	if _vp == null:
 		return
-	_vp.transparent_bg = false
-	if active and _fallback_cam != null and is_instance_valid(_fallback_cam):
-		_portrait_dbg("vp eye=%s fov=%s" % [str(_fallback_cam.global_position), str(_fallback_cam.fov)])
 	_vp.render_target_update_mode = (
 		SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
 	)
@@ -580,7 +558,6 @@ func _fit_camera(root: Node3D, model_path: String) -> void:
 ## 建筑本体当肖像：3/4 视角包住漫反射网格（不含队色光晕 / 脚底贴花）。
 func _frame_body_portrait(root: Node3D) -> bool:
 	var aabb := _framing_aabb_global(root)
-	_portrait_dbg("frame aabb=%s dedicated_skip_check" % str(aabb.size))
 	if aabb.size.length() < 0.05:
 		return false
 	var cam := _ensure_fallback_camera()
