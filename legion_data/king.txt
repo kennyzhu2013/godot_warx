@@ -1,0 +1,2 @@
+wood,income,hp_delta,atk_delta,regen_delta
+80,3,80,4,1

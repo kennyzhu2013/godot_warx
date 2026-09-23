@@ -1,0 +1,14 @@
+# 来源 war3map.w3i 玩家开始点。区域来自修正后的 w3r（left, bottom, right, top）。
+# 八个 RctPlayer 与十个开始点对不上的，region 列写 NONE。不另编一套坐标。
+# 圣明军团的 force mask 是「除统影席位外的全部位」，含空槽 10–31。座位仍是 0–9。
+player,name,type,race,x,y,region
+0,Player 1,human,human,-1536,128,NONE
+1,Player 2,human,human,-1664,1280,RctPlayer_3
+2,Player 3,human,human,704,1344,NONE
+3,Player 4,human,human,-768,-320,NONE
+4,Player 5,human,undead,-2112,-1024,NONE
+5,Player 6,human,undead,1536,1024,RctPlayer_5
+6,Player 7,human,undead,2176,-1664,NONE
+7,Player 8,human,undead,-768,448,RctPlayer_3
+8,圣明军团,computer,human,128,-1408,NONE
+9,统影军团,computer,human,-1472,640,RctPlayer_3

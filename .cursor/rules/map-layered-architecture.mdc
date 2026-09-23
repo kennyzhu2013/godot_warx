@@ -1,0 +1,52 @@
+---
+description: 地图模块分层门禁：Data / Catalog / Logic / Presentation / Editor
+globs: scripts/map/**/*.gd,editor/scripts/**/*.gd,docs/architecture/LAYERED_ARCHITECTURE.md,docs/roadmap/ROADMAP.md,docs/architecture/MAP_DATA.md,docs/editor/EDITOR.md
+alwaysApply: false
+---
+
+# 地图分层架构（vibecoding 门禁）
+
+总纲：`docs/architecture/LAYERED_ARCHITECTURE.md`。路线：`docs/roadmap/ROADMAP.md`。
+
+## 五层（勿混）
+
+| 层 | 目录/前缀 | 可以 | 禁止 |
+| ---- | ----------- | ------ | ------ |
+| Data | `scripts/map/data/` | JSON↔类型、SoA、FLAG/TILE 常量 | 建 Mesh、拼 GLB 路径、算崖 TAG |
+| Catalog | `scripts/map/catalog/` | ID/TAG/tileset → 路径或 Texture 索引；**运行时扫盘**（`load_*`），不检入根 `resources/*.tres` | 改 heightfield、判「这一格是崖」 |
+| Logic | Domain / Document API | 拓扑、门禁、选型、placements | `SurfaceTool`、挂节点、直接 `load` 资产 |
+| Presentation | `map_*_layer`、Mesh 构建 | 消费 placements + resolve 结果 | 写 flags/layer、硬编码资产路径 |
+| Editor | `editor/scripts/`；总管 `Editor`/`MapEditor`（Node） | `@export` 注入 MapRoot；调 Logic API、脏区重建 | 根节点堆业务；笔刷里组 Mesh / resolve 路径 |
+
+编辑场景：`editor_main.tscn` 壳 + 直接子节点 `Editor`；目录目标见 `docs/architecture/LAYERED_ARCHITECTURE.md` §4。
+
+## 模块顺序（强制）
+
+`Data → Catalog(若需) → Logic → Presentation → Editor`  
+当前重构优先 **高度图 + 地面纹理**；斜坡不是本阶段驱动目标。
+
+## 现有脚本裁决（改代码时遵守）
+
+- `Wc3Coords`：基础常量属 Data；`wc3_to_godot` 仅表现边界调用。
+- `HeightfieldMeshBuilder.read_heightfield_meta`：废除，改用 `Wc3Heightfield`。
+- `sample_vert`：属表现网格构建，不进 Data。
+- `Wc3CliffTransCatalog` / `Wc3IdCatalog`：Catalog，不是 map-parsed Data。
+- 直崖应对称做 `Wc3CliffCatalog`；`Wc3CliffTiles` 只留逻辑选型，路径查找进 Catalog。
+- Autotile / 地面组网：在 `MapTerrainLayer`；底层画网格在 `HeightfieldMesh`；贴图数组在 Catalog；材质/shader 在 `assets/`。
+- 调试栅格：`MapDebugGridLayer`；禁止塞进 Terrain/Water/Cliff 层职责。
+- `MapBuildContext`：构建会话，不是 Data；结构化数据纪律见 `map-typed-structures.mdc`。
+- 编辑总管：`MapEditor`（`editor/scripts/editor.gd`）子节点；改图走 `EditorCommandHistory`，禁止 Brush 绕过命令直接改完又不记栈（笔划用 `record`）。
+- 禁止再引入仅转发的 `*MeshBuilder`；拆分尺度见 `map-presentation-split.mdc`。
+
+## 反例
+
+```gdscript
+# ❌ Layer / Brush 内
+flags[i] |= FLAG_RAMP
+var path = "Doodads/Terrain/Cliffs/AAAB0.glb"
+
+# ✅
+doc.heightfield.vertex_at(ix, iy).has_ramp = true  # Logic/Editor → Data
+var path = cliff_catalog.resolve(tag, variation)     # Logic 选型后 Catalog
+layer.build(placements)                              # Presentation
+```

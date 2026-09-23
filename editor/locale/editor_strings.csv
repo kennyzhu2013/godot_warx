@@ -1,0 +1,297 @@
+keys,zh_CN,en
+EDITOR_STATUS_IDLE,地图编辑器,Map Editor
+EDITOR_STATUS_TERRAIN_BRUSH,当前：地形编辑器 / 地表笔刷（左键绘制）,Current: Terrain Editor / Ground Brush (LMB paint)
+EDITOR_STATUS_ABOUT,%s — Godot 复刻竖切,%s — Godot remake slice
+EDITOR_STATUS_NOT_IMPLEMENTED,尚未实现：%s,Not implemented: %s
+EDITOR_STATUS_MAP_CREATED,已新建 %dx%d · %s,Created %dx%d · %s
+EDITOR_STATUS_DOODAD_BRUSH,当前：装饰物笔刷（半格吸附；Esc 取消预览；R/[ ]/Ctrl+滚轮旋转；Delete 删除）,Current: Doodad brush (half-tile snap; Esc clears preview; R/[ ]/Ctrl+wheel rotate; Delete)
+EDITOR_STATUS_DOODAD_SELECTED,已选装饰物：%s [%s],Selected doodad: %s [%s]
+EDITOR_STATUS_DOODAD_PLACED,已放置 %d 个：%s,Placed %d: %s
+EDITOR_STATUS_DOODAD_PICKED,已选中地图装饰物 #%d,Selected map doodad #%d
+EDITOR_STATUS_DOODAD_DELETED,已删除 %d 个装饰物,Deleted %d doodad(s)
+EDITOR_INSPECT_TITLE,导航 / 预览,Navigator / Preview
+EDITOR_MINIMAP_SHOW_BUILDINGS,显示中立建筑图标,Show neutral building icons
+EDITOR_MINIMAP_SHOW_UNITS,显示中立生物图标,Show neutral unit icons
+EDITOR_MINIMAP_SHOW_VIEWPORT,显示当前视口范围,Show viewport frame
+EDITOR_MINIMAP_GAME_PREVIEW,察看游戏小地图,Show game minimap preview
+EDITOR_PREVIEW_EMPTY,（未选择装饰物）,No doodad selected
+EDITOR_PREVIEW_RANDOM_VAR,放置随机样式,Place random variation
+EDITOR_PREVIEW_VARIATION,样式 (%d / %d),Variation (%d / %d)
+EDITOR_PREVIEW_DISTANCE,距离,Distance
+EDITOR_PREVIEW_ANGLE,朝向,Facing
+EDITOR_PREVIEW_FACING,朝向,Facing
+EDITOR_PREVIEW_FACING_CCW,逆时针 45°,Facing −45°
+EDITOR_PREVIEW_FACING_CW,顺时针 45°,Facing +45°
+EDITOR_PREVIEW_ORBIT_HINT,左键拖拽环视（仅观察，不改放置朝向）/ 滚轮缩放,LMB orbit view only (does not change facing) / wheel zoom
+EDITOR_PREVIEW_ANIM,动画,Animation
+EDITOR_PREVIEW_ANIM_PREV,上一个动画,Previous animation
+EDITOR_PREVIEW_ANIM_NEXT,下一个动画,Next animation
+EDITOR_PREVIEW_ANIM_STAND,动画: stand,Anim: stand
+EDITOR_PREVIEW_ANIM_NONE,（无动画）,No animation
+EDITOR_PREVIEW_MISSING_MODEL,缺少模型 GLB,Missing model GLB
+EDITOR_PREVIEW_LOADING,正在加载…,Loading…
+EDITOR_DOODAD_LIST_EMPTY,无可用条目（检查 slk-exported）,No entries (check slk-exported)
+EDITOR_DOODAD_RANDOM_VAR,放置时使用随机样式,Use random variation when placing
+EDITOR_DOODAD_VAR_PREV,上一个样式,Previous variation
+EDITOR_DOODAD_VAR_NEXT,下一个样式,Next variation
+EDITOR_DOODAD_RAND_ROTATION,随机旋转角度,Random Rotation
+EDITOR_DOODAD_RAND_SCALE_SYM,随机大小 - 对称,Random Scale - Symmetric
+EDITOR_DOODAD_RAND_SCALE_Z,随机大小 - Z轴（高度）,Random Scale - Z Axis (height)
+EDITOR_DOODAD_RAND_SCALE_XY,随机大小 - XY面,Random Scale - XY Plane
+WESTRING_DTYPE_PROPS,道具,Props
+WESTRING_DTYPE_STRUCTURES,建筑,Structures
+WESTRING_DTYPE_WATER,水,Water
+WESTRING_DTYPE_CLIFF,悬崖/地形,Cliff / Terrain
+WESTRING_DTYPE_ENVIRONMENT,环境,Environment
+WESTRING_DTYPE_CINEMATIC,电影,Cinematic
+WESTRING_DTYPE_DESTRUCTABLE,可破坏物,Destructible
+WESTRING_DTYPE_PATHING,通行阻挡,Pathing Blocker
+WESTRING_DTYPE_BRIDGE,桥梁,Bridge
+EDITOR_HUD_STATUS,状态,Status
+EDITOR_HUD_COORDS,坐标,Coords
+EDITOR_HUD_BRUSH,笔刷,Brush
+EDITOR_HUD_PROPS,属性,Props
+EDITOR_HUD_BRUSH_TERRAIN,地表 · %s,Terrain · %s
+EDITOR_HUD_BRUSH_DOODAD,装饰物 · %s [%s],Doodad · %s [%s]
+EDITOR_HUD_PROPS_DOODAD,"样式 %d · 朝向 %d° · 比例 %.2f","Var %d · Facing %d° · Scale %.2f"
+EDITOR_STATUS_OPEN_FAILED,打开失败：%s,Open failed: %s
+EDITOR_STATUS_OPENED_MAP,已打开 %s（只编辑内存文档，不改磁盘）,Opened %s (in-memory only; disk unchanged)
+EDITOR_OPENMAP_TITLE,打开地图,Open Map
+EDITOR_OPENMAP_HINT,选择已解析的地图（assets/map-parsed）：,Select a parsed map (assets/map-parsed):
+EDITOR_OPENMAP_EMPTY,未找到地图。请先用 tools/map-parse 导出。,No maps found. Run tools/map-parse first.
+EDITOR_STATUS_SAVE_FAILED,保存失败,Save failed
+EDITOR_STATUS_SAVED,已保存到 user://editor_maps/,Saved to user://editor_maps/
+EDITOR_HOVER_CELL,"顶点 (%d, %d)","Vertex (%d, %d)"
+EDITOR_HOVER_CELL_EMPTY,"顶点 (—, —)","Vertex (—, —)"
+EDITOR_TOOLBAR_BRUSH,笔刷: %s,Brush: %s
+EDITOR_TOOLBAR_BRUSH_EMPTY,笔刷: —,Brush: —
+EDITOR_TOOLBAR_DIRTY,● 已修改,● Modified
+EDITOR_PALETTE_TITLE,地表贴图,Ground Textures
+EDITOR_PALETTE_PLACEHOLDER,尚未实现,Not implemented yet
+EDITOR_PALETTE_PLACEHOLDER_KIND,%s（尚未实现）,%s (not implemented yet)
+EDITOR_TILE_UNBUILDABLE_FMT,%s（%s）,%s (%s)
+WESTRING_UNBUILDABLE,不可建造,Unbuildable
+WESTRING_APPLYTEXTURE,应用纹理,Apply Texture
+WESTRING_BLIGHT,荒芜之地,Blight
+WESTRING_TILE_BOUNDARY,边界,Boundary
+EDITOR_TILE_BOUNDARY_REMOVE,去除边界,Remove Boundary
+WESTRING_APPLYCLIFF,应用悬崖,Apply Cliff
+WESTRING_APPLYHEIGHT,应用高度,Apply Height
+WESTRING_BRUSHSIZE,尺寸,Size
+WESTRING_BRUSHSHAPE,形状,Shape
+WESTRING_BRUSH_CIRCLE,圆形,Circle
+WESTRING_BRUSH_SQUARE,正方形,Square
+WESTRING_BRUSH_RAISE,升高地面,Raise
+WESTRING_BRUSH_LOWER,降低地面,Lower
+WESTRING_BRUSH_PLATEAU,整平地面,Plateau
+WESTRING_BRUSH_NOISE,剧烈地形,Noise
+WESTRING_BRUSH_SMOOTH,平滑地面,Smooth
+WESTRING_BRUSH_CLIFFTYPE,悬崖类型,Cliff Type
+WESTRING_DECTWO,降低两层,Decrease Two
+WESTRING_DECONE,降低一层,Decrease One
+WESTRING_SAMELEVEL,整平地面,Same Level
+WESTRING_INCONE,升高一层,Increase One
+WESTRING_INCTWO,升高两层,Increase Two
+WESTRING_DEEPWATER,深水,Deep Water
+WESTRING_BRUSH_RAMP,斜坡,Ramp
+WESTRING_SHALLOWWATER,浅水,Shallow Water
+WESTRING_NOTHINGTILE,边界,Boundary
+WESTRING_REMOVENOTHINGTILE,去除边界,Remove Boundary
+WESTRING_CLIFF_CLdi,泥土悬崖,Dirt Cliff
+WESTRING_CLIFF_CLgr,草地悬崖,Grass Cliff
+WESTRING_TEXTURE,纹理,Texture
+EDITOR_NEWMAP_TITLE,创建新地图,Create New Map
+EDITOR_NEWMAP_TERRAIN_SECTION,地形设置,Terrain Settings
+EDITOR_NEWMAP_LABEL_COLON,%s:,%s:
+EDITOR_NEWMAP_VALUE,%s: %s,%s: %s
+EDITOR_NEWMAP_EMPTY,—,—
+EDITOR_WATER_SHALLOW,浅水,Shallow Water
+EDITOR_WATER_DEEP,深水,Deep Water
+EDITOR_MENU_LANG_ZH,语言：中文,Language: Chinese
+EDITOR_MENU_LANG_EN,语言：English,Language: English
+WESTRING_MENU_FILE,文件(&F),File(&F)
+WESTRING_MENU_NEW,创建新地图(&N)…,New Map(&N)…
+WESTRING_MENU_OPEN,打开地图(&O)…,Open Map(&O)…
+WESTRING_MENU_CLOSE,关闭地图(&C),Close Map(&C)
+WESTRING_MENU_SAVE,保存地图(&S),Save Map(&S)
+WESTRING_MENU_SAVEAS,地图另存为...(&A),Save Map As...(&A)
+WESTRING_MENU_CALCSHADOWS,计算阴影(&H),Calculate Shadows(&H)
+WESTRING_MENU_EXPORTSCRIPT,导出脚本(&E)…,Export Script(&E)…
+WESTRING_MENU_EXPORTMINIMAP,导出微缩地图(&M)…,Export Minimap(&M)…
+WESTRING_MENU_EXPORTSTRINGS,导出字符串(&T)…,Export Strings(&T)…
+WESTRING_MENU_IMPORTSTRINGS,导入字符串(&I)…,Import Strings(&I)…
+WESTRING_MENU_EDITPREFS,参数(&P)…,Preferences(&P)…
+WESTRING_MENU_CONFIGCTRLS,配置控件(&G)…,Configure Controls(&G)…
+WESTRING_MENU_TESTMAP,测试地图(&T),Test Map(&T)
+WESTRING_MENU_EXIT,退出(&X),Exit(&X)
+WESTRING_MENU_EDIT,编辑(&E),Edit(&E)
+WESTRING_MENU_UNDO,撤消(&U),Undo(&U)
+WESTRING_MENU_REDO,重做(&R),Redo(&R)
+WESTRING_MENU_CUT,剪切(&T),Cut(&T)
+WESTRING_MENU_COPY,复制(&C),Copy(&C)
+WESTRING_MENU_PASTE,粘帖(&P),Paste(&P)
+WESTRING_MENU_CLEAR,清除(&E),Clear(&E)
+WESTRING_MENU_SELECTALL,全选(&A),Select All(&A)
+WESTRING_MENU_EDITPROPS,编辑属性…,Edit Properties…
+WESTRING_MENU_VIEW,察看(&V),View(&V)
+WESTRING_MENU_TEXTURED,纹理,Textured
+WESTRING_MENU_WIREFRAME,线框,Wireframe
+WESTRING_MENU_TERRAIN,地形(&T),Terrain(&T)
+WESTRING_MENU_DOODADS,地形装饰物(&D),Doodads(&D)
+WESTRING_MENU_UNITS,单位(&U),Units(&U)
+WESTRING_MENU_WATER,水面,Water
+WESTRING_MENU_BLIGHT,荒芜之地,Blight
+WESTRING_MENU_PATHING,路径-地面(&P),Pathing - Ground(&P)
+WESTRING_MENU_SHADOWS,阴影,Shadows
+WESTRING_MENU_LIGHTING,光照,Lighting
+WESTRING_MENU_WEATHER,天气,Weather
+WESTRING_MENU_GRID,栅格(&G),Grid(&G)
+WESTRING_MENU_GRID_NONE,没有(&N),None(&N)
+WESTRING_MENU_GRID_LARGE,大的(&L),Large(&L)
+WESTRING_MENU_GRID_MEDIUM,适中的(&M),Medium(&M)
+WESTRING_MENU_GRID_SMALL,小的(&S),Small(&S)
+EDITOR_STATUS_GRID,栅格：%s,Grid: %s
+WESTRING_MENU_CAMERABOUNDS,镜头边界,Camera Bounds
+WESTRING_MENU_REGIONS,设定区域(&R),Regions(&R)
+WESTRING_MENU_CAMERAS,镜头(&C),Cameras(&C)
+WESTRING_MENU_SKY,天空,Sky
+WESTRING_MENU_FOGEFFECTS,迷雾效果,Fog Effects
+WESTRING_MENU_LETTERBOX,信箱模式,Letterbox
+WESTRING_MENU_GAMECAMERASNAP,游戏镜头,Game Camera
+WESTRING_MENU_LAYER,层面(&L),Layer(&L)
+WESTRING_MENU_SCENARIO,情节(&S),Scenario(&S)
+WESTRING_MENU_MAPDESCRIPTION,地图描述…,Map Description…
+WESTRING_MENU_MAPOPTIONS,地图选项…,Map Options…
+WESTRING_MENU_MAPSIZE,地图尺寸…,Map Size…
+WESTRING_MENU_LOADSCREEN,载入画面…,Loading Screen…
+WESTRING_MENU_PROLOGUE,开场…,Prologue…
+WESTRING_MENU_PLAYERPROPS,玩家属性…,Player Properties…
+WESTRING_MENU_FORCEPROPS,势力属性…,Force Properties…
+WESTRING_MENU_ALLYPRIPROPS,联盟优先权…,Ally Priorities…
+WESTRING_MENU_TECHPROPS,科技树…,Tech Tree…
+WESTRING_MENU_ABILITIES,技能…,Abilities…
+WESTRING_MENU_UPGRADEPROPS,升级…,Upgrades…
+WESTRING_MENU_TOOLS,工具(&T),Tools(&T)
+WESTRING_MENU_SELBRUSH,选择笔刷,Selection Brush
+WESTRING_MENU_HEIGHTBRUSH,高度笔刷,Increase/Decrease
+WESTRING_MENU_LEVELBRUSH,平台笔刷,Plateau
+WESTRING_MENU_NOISEBRUSH,噪音笔刷,Noise
+WESTRING_MENU_SMOOTHBRUSH,平滑笔刷,Smooth
+WESTRING_MENU_BRUSHSIZE,笔刷大小,Brush Size
+WESTRING_MENU_BRUSHSHAPE,笔刷形状,Brush Shape
+WESTRING_MENU_ADVANCED,高级(&A),Advanced(&A)
+WESTRING_MENU_MODTILESET,修改地形集…,Modify Tileset…
+WESTRING_MENU_RANDOMGROUPS,随机组…,Random Groups…
+WESTRING_MENU_ITEMTABLES,物品表…,Item Tables…
+WESTRING_MENU_RESETHEIGHT,重置高度,Reset Height
+WESTRING_MENU_ADJUSTCLIFFLEVELS,调整悬崖高度,Adjust Cliff Levels
+WESTRING_MENU_REPLACETILES,替换地表…,Replace Tiles…
+WESTRING_MENU_REPLACECLIFFTYPE,替换悬崖类型…,Replace Cliff Type…
+WESTRING_MENU_REPLACEDOODADS,替换装饰物…,Replace Doodads…
+WESTRING_MENU_REPLACEUNITS,替换单位…,Replace Units…
+WESTRING_MENU_GAMECONSTANTS,游戏常数…,Gameplay Constants…
+WESTRING_MENU_GAMEINTERFACE,游戏界面…,Game Interface…
+WESTRING_MENU_VIEWENTIREMAP,察看整张地图,View Entire Map
+WESTRING_MENU_MODULE,模块(&M),Module(&M)
+WESTRING_MENU_MODULE_TERRAIN,地形编辑器(&T),Terrain Editor(&T)
+WESTRING_MENU_MODULE_SCRIPTS,开关编辑器(&R),Trigger Editor(&R)
+WESTRING_MENU_MODULE_SOUND,声音编辑器(&N),Sound Editor(&N)
+WESTRING_MENU_OBJECTEDITOR,物体编辑器(&O),Object Editor(&O)
+WESTRING_MENU_MODULE_CAMPAIGN,战役编辑器(&C),Campaign Editor(&C)
+WESTRING_MENU_OBJECTMANAGER,物体管理器(&O),Object Manager(&O)
+WESTRING_MENU_IMPORTMANAGER,输入管理器(&I),Import Manager(&I)
+WESTRING_MENU_MODULE_AI,AI编辑器(&A),AI Editor(&A)
+WESTRING_MENU_WINDOW,窗口(&W),Window(&W)
+WESTRING_MENU_NEWPALETTE,新面板,New Palette
+WESTRING_MENU_SHOWPALETTES,显示面板,Show Palettes
+WESTRING_TOOL_PALETTE,工具面板,Tool Palette
+WESTRING_PALETTE_TERRAIN,地形面板,Terrain Palette
+WESTRING_PALETTE_UNITS,单位面板,Unit Palette
+WESTRING_PALETTE_DOODADS,地形装饰物面板,Doodad Palette
+WESTRING_PALETTE_REGIONS,矩形区域面板,Region Palette
+WESTRING_PALETTE_CAMERAS,镜头面板,Camera Palette
+WESTRING_MENU_TOOLBAR,工具条(&T),Toolbar(&T)
+WESTRING_MENU_MINIMAP,微缩地图(&M),Minimap(&M)
+WESTRING_MENU_PREVIEWER,预览器,Previewer
+WESTRING_MENU_TREEVIEW,笔刷列表,Brush List
+WESTRING_MENU_HELP,帮助(&H),Help(&H)
+WESTRING_MENU_W3HELP,魔兽争霸III帮助,Warcraft III Help
+WESTRING_MENU_LICENSE,许可协议,License Agreement
+WESTRING_MENU_ABOUT,关于魔兽争霸III地图编辑器(&A)...,About Warcraft III World Editor(&A)...
+WESTRING_APPNAME,魔兽争霸III地图编辑器,Warcraft III World Editor
+WESTRING_OK,确定,OK
+WESTRING_CANCEL,取消,Cancel
+WESTRING_NONE,没有,None
+WESTRING_NEWMAP_SIZE,地图大小,Map Size
+WESTRING_NEWMAP_SIZEX,宽度,Width
+WESTRING_NEWMAP_SIZEY,高度,Height
+WESTRING_NEWMAP_PLAYSIZE,可用区域,Playable Area
+WESTRING_NEWMAP_PLAYSIZEX,宽度,Width
+WESTRING_NEWMAP_PLAYSIZEY,高度,Height
+WESTRING_NEWMAP_SIZEDESC,尺寸说明,Size Description
+WESTRING_NEWMAP_DEFTILE,初始地形,Initial Ground
+WESTRING_NEWMAP_DEFCLIFF,初始悬崖高度,Initial Cliff Level
+WESTRING_NEWMAP_DEFWATER,初始水位,Initial Water Level
+WESTRING_RANDOMHEIGHT,随机地形高度,Random Height
+WESTRING_MAPSIZE_TINY,极小,Tiny
+WESTRING_MAPSIZE_SMALL,小的,Small
+WESTRING_MAPSIZE_MEDIUM,适中,Medium
+WESTRING_MAPSIZE_LARGE,大的,Large
+WESTRING_MAPSIZE_HUGE,巨大的,Huge
+WESTRING_MAPSIZE_EPIC,壮丽的,Epic
+WESTRING_LOCALE_LORDAERON_SUMMER,洛丹伦 (夏),Lordaeron Summer
+WESTRING_LOCALE_LORDAERON_FALL,洛丹伦(秋),Lordaeron Fall
+WESTRING_LOCALE_LORDAERON_WINTER,洛丹伦(冬),Lordaeron Winter
+WESTRING_LOCALE_ICECROWN,冰封王座,Icecrown
+WESTRING_TILE_DIRT,泥土,Dirt
+WESTRING_TILE_GRASS,草地,Grass
+EDITOR_MENU_RAMP_DEBUG,斜坡标记(&R),Ramp Marks(&R)
+EDITOR_UNIT_GROUP_STANDARD,标准单位,Standard Units
+EDITOR_UNIT_GROUP_CAMPAIGN,战役单位,Campaign Units
+EDITOR_UNIT_GROUP_SPECIAL,特殊单位,Special Units
+EDITOR_UNIT_GROUP_ALL,全部,All
+EDITOR_UNIT_SET_MELEE,对战,Melee
+EDITOR_UNIT_SET_CAMPAIGN,战役,Campaign
+EDITOR_UNIT_CURRENT_FMT,单位: %s,Unit: %s
+EDITOR_UNIT_LIST_EMPTY,(无单位), (No units)
+EDITOR_UNIT_ANY_LEVEL,任何等级,Any Level
+EDITOR_UNIT_LEVEL_FMT,等级 %d,Level %d
+EDITOR_UNIT_RACE_CREEPS,中立敌对,Neutral Hostile
+EDITOR_UNIT_RACE_CRITTERS,中立被动,Neutral Passive
+EDITOR_UNIT_RACE_COMMONER,平民,Commoner
+EDITOR_UNIT_RACE_DEMON,恶魔,Demon
+EDITOR_UNIT_OWNER_NEUTRAL_PASSIVE,中立被动,Neutral Passive
+WESTRING_STARTLOCATION,开始点,Start Location
+EDITOR_UNIT_OWNER_NEUTRAL_HOSTILE,中立敌对,Neutral Hostile
+EDITOR_UNIT_OWNER_PLAYER_FMT,玩家 %d（%s）,Player %d (%s)
+EDITOR_STATUS_UNIT_SELECTED,已选单位：%s [%s] 玩家 %d,Selected unit: %s [%s] player %d
+EDITOR_STATUS_UNIT_BRUSH,当前：单位笔刷（半格吸附；Esc 取消预览；R/[ ] 旋转；Delete 删除）,Current: Unit brush (half-tile snap; Esc clears preview; R/[ ] rotate; Delete)
+EDITOR_STATUS_UNIT_PLACED,已放置 %d 个：%s,Placed %d: %s
+EDITOR_STATUS_UNIT_PICKED,已选中地图单位 #%d,Selected map unit #%d
+EDITOR_STATUS_UNIT_DELETED,已删除 %d 个单位,Deleted %d unit(s)
+EDITOR_HUD_BRUSH_UNIT,%s [%s] P%d,%s [%s] P%d
+EDITOR_HUD_PROPS_UNIT,玩家 %d,Player %d
+EDITOR_DIALOG_OK,确定,OK
+EDITOR_DIALOG_CANCEL,取消,Cancel
+EDITOR_UNIT_PROPS_TITLE,单位属性,Unit Properties
+EDITOR_UNIT_PROPS_TAB_GENERAL,普通,General
+EDITOR_UNIT_PROPS_TAB_SKILLS,技能,Abilities
+EDITOR_UNIT_PROPS_TAB_DROPS,掉落物品,Item Drops
+EDITOR_UNIT_PROPS_LEVEL,等级: %d,Level: %d
+EDITOR_UNIT_PROPS_OWNER,玩家,Player
+EDITOR_UNIT_PROPS_FACING,面向角度,Facing Angle
+EDITOR_UNIT_PROPS_HP_PCT,生命值%%,Hit Points %%
+EDITOR_UNIT_PROPS_MP,魔法值,Mana Points
+EDITOR_UNIT_PROPS_ACQ,单位警戒范围,Unit Acquisition Range
+EDITOR_UNIT_PROPS_ACQ_NORMAL,普通(N): (%d),Normal(N): (%d)
+EDITOR_UNIT_PROPS_ACQ_CAMP,营地(C): (%d),Camp(C): (%d)
+EDITOR_UNIT_PROPS_SKILLS_HINT,技能系统接入后可在此编辑激活状态。当前只读列出单位技能。,Ability editing comes after the skill system. Listed read-only for now.
+EDITOR_UNIT_PROPS_DROPS_TITLE,死亡掉落物品,Items Dropped on Death
+EDITOR_UNIT_PROPS_DROPS_NOTE,有掉落配置的单位在地图上会显示头顶白色提示环。编辑掉落表将在后续版本完善。,Units with drop sets show a white ring above their head. Full drop-table editing comes later.
+EDITOR_UNIT_PROPS_DROPS_EMPTY,（未配置死亡掉落）, (No death drops)
+EDITOR_UNIT_PROPS_DROPS_ROW,组 %d · %s · %d%%,Set %d · %s · %d%%
+EDITOR_UNIT_OWNER_PLAYER_N,玩家 %d,Player %d
+EDITOR_STATUS_PATHING_GROUND,路径-地面：%s,Pathing-Ground: %s
+EDITOR_STATUS_LOADING_UNITS,正在加载单位…,Loading units…
+EDITOR_STATUS_LOADING_UNITS_PROGRESS,后台加载单位… %d/%d,Loading units (bg)… %d/%d
+EDITOR_STATUS_PATHING_GROUND_ON,路径-地面：开（%d 格）,Pathing-Ground: On (%d cells)
