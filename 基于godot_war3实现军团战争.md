@@ -83,6 +83,12 @@ legion_main.tscn → LegionMatchMode（独立节点，@export 注入依赖）
 
 要做到：`bootstrap` 一条命令生成 `map-parsed/legiontd` 和军团模型。脚本路径改为相对仓库根或读 `bootstrap.config.json`。地图 MPQ 的资源走现有 mod overlay 车道（`AssetProvider.register_overlay`，目录 `mods/legiontd/`），见 `docs/architecture/ASSET_LANES.md`。
 
+现状：
+
+- 已做：军团脚本共用 `tools/map-parse/src/legion-paths.js`，不再写死本机路径；`LEGION_PARSED_DIR` 可覆盖已解析目录。
+- 已做：`bootstrap.config.json` 有 `LegionTD` 条目，读已解包的地图目录。先把加密 w3x 解包，然后 `set LEGION_LOOSE_DIR=<解包目录>` 再跑 `node tools/bootstrap.mjs`；没设置时这一项跳过，不中断其它地图。也可以单跑 `node tools/map-parse/src/parse-loose.js <解包目录>`。
+- 未做：军团模型进 mod overlay，放到阶段 2 之前。
+
 验收只看游戏窗口：底栏数字、命令格、场上模型和血条。
 
 ---
@@ -290,6 +296,10 @@ seat,side,region,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 新建 `legion_main.tscn`，`legion_boot.gd` 跳到它。跳过 `MeleeBootstrap`。本地 `PlayerStock` 设为 300 金、114 木、人口 0/7。相机对准本方 `RctPlayer` 区域。
 
 **验收：** 窗口里是军团地图的地形，顶栏是 300 金、114 木、人口 0/7。没有人族主城，没有五个农民。另开 `game_main` 仍是 Echo Isles 500 金 / 150 木。
+
+已接好：`MatchMode` 基类（`game/scripts/modes/match_mode.gd`）；`GameDirector.match_mode` 绑定后由模式建 session 并跳过 Melee，`session_ready` 后调 `begin`；`LegionMatchMode` 设库存、镜头对准 `local_region`（默认 `RctPlayer_0`）的格子中心，状态行写出区域和库存；`LegionTables` 读 `legion_data`；`legion_main.tscn` 继承 `game_main`。
+
+验收步骤：编辑器打开项目一次（注册新的 `class_name`），F6 运行 `game/scenes/legion_main.tscn` 或 `legion_ui/legion_boot.tscn`，对照上面的验收；再 F6 `game_main.tscn` 确认 Echo 不受影响。
 
 ### 阶段 1 · 地图对位与席位表
 

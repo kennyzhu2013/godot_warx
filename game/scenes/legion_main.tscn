@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://b20kj6oms7qoi" path="res://game/scenes/game_main.tscn" id="1_base"]
+[ext_resource type="Script" path="res://game/scripts/modes/legion/legion_match_mode.gd" id="2_mode"]
+
+[node name="GameMain" instance=ExtResource("1_base")]
+
+[node name="MapRoot" parent="."]
+map_dir = "res://assets/map-parsed/legiontd"
+
+[node name="GameDirector" parent="."]
+map_dir = "res://assets/map-parsed/legiontd"
+match_mode = NodePath("../LegionMatchMode")
+random_start_location = false
+spawn_melee_base = false
+dev_spawn_archmage = false
+dev_spawn_priest = false
+
+[node name="GameLoadingScreen" parent="."]
+map_title = "军团战争 TD"
+
+[node name="LegionMatchMode" type="Node" parent="."]
+script = ExtResource("2_mode")
+rts_camera = NodePath("../RtsCamera")
+game_hud = NodePath("../GameHud")

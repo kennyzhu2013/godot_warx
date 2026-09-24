@@ -374,6 +374,28 @@ function main() {
       log("  (no maps in config.maps.items, skip)");
     } else {
       for (const m of items) {
+        if (m.loose !== undefined) {
+          // 已解开的地图目录（加密 w3x 由外部工具解包）；目录可由 looseEnv 指定的环境变量覆盖
+          const looseDir = (m.looseEnv && process.env[m.looseEnv]) || m.loose || "";
+          if (!looseDir || !existsSync(looseDir)) {
+            const hint = m.looseEnv ? `，设置 ${m.looseEnv} 或 config.maps loose` : "";
+            if (m.optional) {
+              log(`  skip ${m.name}: 未找到解包目录「${looseDir}」${hint}`);
+              continue;
+            }
+            plog.fatal(`loose map dir not found: ${looseDir}`, `config.maps item: ${m.name}${hint}`);
+            plog.endSession({ exit: 1 });
+            process.exit(1);
+          }
+          log(`  parsing ${m.name} (loose ${looseDir})`);
+          run("node", [
+            "tools/map-parse/src/parse-loose.js",
+            looseDir,
+            "--out", join(REPO_ROOT, "assets", "map-parsed"),
+            "--slug", m.out,
+          ], { shell: false, live: true });
+          continue;
+        }
         const absMap = isAbsolute(m.w3x)
           ? m.w3x
           : join(cacheMapsRoot, m.w3x);

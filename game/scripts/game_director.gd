@@ -23,6 +23,10 @@ const CombatProjectileShellScene = preload("res://game/scenes/combat_projectile_
 @export var show_pathing_ground: bool = true
 @export var show_ramp_debug: bool = false
 
+@export_group("对局模式")
+## 绑定后由模式创建 session 并跳过 Melee 开局（如 LegionMatchMode）；留空为 Melee。
+@export var match_mode: MatchMode
+
 @export_group("Melee 开局")
 ## 预览种族：human / orc / undead / nightelf
 @export var preview_race: String = "human"
@@ -520,7 +524,9 @@ func _on_map_loaded() -> void:
 		return
 	_bootstrapped = true
 	_hide_start_locations()
-	_bootstrap_melee()
+	var mode_active := _bootstrap_match_mode()
+	if not mode_active:
+		_bootstrap_melee()
 	_setup_selector()
 	_setup_pathing()
 	_setup_minimap()
@@ -536,6 +542,8 @@ func _on_map_loaded() -> void:
 	if map_root != null:
 		map_root.set_view_grid_level(view_grid_level)
 	session_ready.emit()
+	if mode_active:
+		match_mode.begin(_session)
 
 
 func _setup_health_bars() -> void:
@@ -787,6 +795,20 @@ func _hide_start_locations() -> void:
 		var d: Dictionary = c.get_meta("unit_data", {})
 		if str(d.get("typeId", "")) == "sloc" or str(c.name).begins_with("sloc_"):
 			c.queue_free()
+
+
+## 有对局模式且其返回 session 时接管开局；返回 false 表示回退 Melee。
+func _bootstrap_match_mode() -> bool:
+	if match_mode == null:
+		return false
+	var session := match_mode.create_session(map_dir, local_player)
+	if session == null:
+		return false
+	_session = session
+	_apply_cursor_race(session.local_race)
+	if game_hud:
+		game_hud.bind_stock(_session.local_stock())
+	return true
 
 
 func _bootstrap_melee() -> void:

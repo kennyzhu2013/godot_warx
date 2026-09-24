@@ -30,6 +30,14 @@
         "name": "TwistedMeadows",
         "w3x": "(4)TwistedMeadows.w3x",
         "out": "twistedmeadows"
+      },
+      {
+        "name": "LegionTD",
+        "_comment": "军团战争 5.34c。w3x 加密，先用外部工具解包成目录；loose 填目录，或设环境变量 LEGION_LOOSE_DIR。找不到时跳过。",
+        "loose": "",
+        "looseEnv": "LEGION_LOOSE_DIR",
+        "out": "legiontd",
+        "optional": true
       }
     ]
   },
