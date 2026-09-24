@@ -2,11 +2,11 @@
   "_comment": "WC3 资源 bootstrap 配置。老李 D3 决策 (2026-08-08)：任何 wc3 资源不入 git；本文件入 git 引导 bootstrap。",
   "wc3": {
     "_comment": "WC3 安装根目录（mpq-extract 读 MPQ 用的根）。可被 WC3_PATH 环境变量覆盖。",
-    "path": "D:/Program Files (x86)/Warcraft3"
+    "path": "D:/game2/war3/Warcraft III"
   },
   "godot": {
     "_comment": "Godot 4.x 可执行（asset-convert bake .scn 用）。可被 GODOT / GODOT_BIN 环境变量覆盖。",
-    "path": "C:/Users/Administrator/Desktop/Godot_v4.6.3-stable_win64_console.exe"
+    "path": "D:/software/godot/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe"
   },
   "maps": {
     "_comment": "要解析的地图列表（map-parse 用）。每条 name=唯一标识 / w3x=相对 wc3-assets 根目录的路径 / out=输出目录名（落到 assets/map-parsed/ 下）。",

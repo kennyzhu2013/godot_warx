@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
 const root = "d:/game2/rpg/mpqediten64/Work/godot_war3/assets/map-parsed/legiontd";
-const dataDir = "d:/game2/rpg/mpqediten64/godot/data";
+const dataDir = "d:/game2/rpg/mpqediten64/Work/godot_war3/legion_data";
 const regions = JSON.parse(fs.readFileSync(`${root}/regions.json`, "utf8"));
 const pathing = JSON.parse(fs.readFileSync(`${root}/pathing.json`, "utf8"));
 const info = JSON.parse(fs.readFileSync(`${root}/info.json`, "utf8"));
