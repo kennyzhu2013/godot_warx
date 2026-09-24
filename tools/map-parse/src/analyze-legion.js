@@ -1,6 +1,7 @@
 import fs from "node:fs";
+import { LEGION_PARSED_DIR } from "./legion-paths.js";
 
-const root = "d:/game2/rpg/mpqediten64/Work/godot_war3/assets/map-parsed/legiontd";
+const root = LEGION_PARSED_DIR;
 const info = JSON.parse(fs.readFileSync(`${root}/info.json`, "utf8"));
 const regions = JSON.parse(fs.readFileSync(`${root}/regions.json`, "utf8"));
 const doodads = JSON.parse(fs.readFileSync(`${root}/doodads.json`, "utf8"));

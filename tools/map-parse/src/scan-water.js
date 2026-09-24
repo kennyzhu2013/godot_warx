@@ -1,5 +1,8 @@
 import fs from "node:fs";
-const hf = JSON.parse(fs.readFileSync("d:/game2/rpg/mpqediten64/Work/godot_war3/assets/map-parsed/legiontd/terrain-heightfield.json", "utf8"));
+import path from "node:path";
+import { LEGION_PARSED_DIR } from "./legion-paths.js";
+
+const hf = JSON.parse(fs.readFileSync(path.join(LEGION_PARSED_DIR, "terrain-heightfield.json"), "utf8"));
 const tw = hf.tilepointWidth;
 const ox = hf.centerOffset.x;
 const oy = hf.centerOffset.y;

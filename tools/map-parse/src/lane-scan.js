@@ -1,5 +1,7 @@
 import fs from "node:fs";
-const root = "d:/game2/rpg/mpqediten64/Work/godot_war3/assets/map-parsed/legiontd";
+import { LEGION_PARSED_DIR } from "./legion-paths.js";
+
+const root = LEGION_PARSED_DIR;
 const pathing = JSON.parse(fs.readFileSync(`${root}/pathing.json`, "utf8"));
 const bytes = Buffer.from(pathing.cellsBase64, "base64");
 const W = pathing.width;

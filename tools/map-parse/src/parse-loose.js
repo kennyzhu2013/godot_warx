@@ -1,9 +1,11 @@
 /**
  * 解析已解开的地图目录（不是 MPQ）。输出与 parse-map.js 相同的 JSON。
- * node src/parse-loose.js <地图目录> --out <输出根目录>
+ * node src/parse-loose.js <地图目录> [--out <输出根目录>] [--slug <子目录名>]
+ * 默认输出 <仓库>/assets/map-parsed/legiontd。
  */
 import fs from "node:fs";
 import path from "node:path";
+import { REPO_ROOT } from "./legion-paths.js";
 import { parseWts } from "./parsers/wts.js";
 import { parseW3i } from "./parsers/w3i.js";
 import { parseW3e } from "./parsers/w3e.js";
@@ -15,9 +17,10 @@ import { parseWpm } from "./parsers/wpm.js";
 const mapDir = path.resolve(process.argv[2] ?? "");
 const outIdx = process.argv.indexOf("--out");
 const outRoot = path.resolve(
-  outIdx >= 0 ? process.argv[outIdx + 1] : path.resolve("..", "..", "assets", "map-parsed"),
+  outIdx >= 0 ? process.argv[outIdx + 1] : path.join(REPO_ROOT, "assets", "map-parsed"),
 );
-const slug = "legiontd";
+const slugIdx = process.argv.indexOf("--slug");
+const slug = slugIdx >= 0 ? process.argv[slugIdx + 1] : "legiontd";
 const outDir = path.join(outRoot, slug);
 
 if (!fs.existsSync(mapDir)) {
