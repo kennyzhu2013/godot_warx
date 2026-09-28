@@ -308,7 +308,7 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 验收步骤：先跑 `convert:legion-td`；编辑器打开项目一次（注册新的 `class_name`），F6 运行 `game/scenes/legion_main.tscn` 或 `legion_ui/legion_boot.tscn`，对照上面的验收；再 F6 `game_main.tscn` 确认 Echo 不受影响。
 
-### 阶段 1 · 地图对位与席位表
+### 阶段 1 · 地图对位与席位表（2026-09-28 窗口验收通过）
 
 不刷波、不造兵。写出 `seats.txt`，用 GM 面板把建造格、出怪点、漏怪点、国王坐标画出来。
 
@@ -324,7 +324,7 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 - `LegionSeats`（Data）读表；`LegionCalibration`（Logic）用 `PathQuery` 检查每个启用席位的点是否可走、出怪→漏怪和漏怪→国王是否连通；`LegionDebugOverlay`（Present）贴地画格子和标记。
 - GM 面板新增通用 `add_section`；军团模式挂「军团标定（seats.txt）」一节：
   - 「显示建造格 / 出怪 / 漏怪 / 国王」：启用区域的格子绿框，未启用灰框，不可走或不可造红框；绿菱形出怪点，橙菱形漏怪点，红框叉国王。
-  - 「左键点选坐标」：左键地面后，面板和状态行写出点击坐标、是否可走、最近建造格的区域 / 列 / 行 / 格心；坐标 `x,y` 复制到剪贴板，可直接粘进 `seats.txt`。
+  - 「左键点选坐标」：左键地面后，面板和状态行写出点击坐标、是否可走、最近建造格的区域 / 列 / 行 / 格心；坐标 `x,y` 复制到剪贴板，可直接粘进 `seats.txt`。点选走 `_input` 而不是 `_unhandled_input`：`UnitSelector` 在 `_input` 里就把左键标成已处理；鼠标下有界面控件时不处理，点击留给 GM 面板。后续模式里抢地面点击的功能（造兵落格等）照这个写。
   - 「检查连通」：逐项列出结果；青线是连通路径，品红直线是不连通。
   - 「重载 seats.txt」：改表后不用重启。
 - `GameDirector` 新增公开只读方法 `ground_wc3_at_screen`、`get_path_query`、`get_heightfield`。
