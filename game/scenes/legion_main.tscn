@@ -22,7 +22,8 @@ dev_spawn_priest = false
 [node name="GameLoadingScreen" parent="."]
 map_title = "军团战争 TD"
 
-[node name="LegionMatchMode" type="Node" parent="." node_paths=PackedStringArray("rts_camera", "game_hud")]
+[node name="LegionMatchMode" type="Node" parent="." node_paths=PackedStringArray("rts_camera", "game_hud", "director")]
 script = ExtResource("2_mode")
 rts_camera = NodePath("../RtsCamera")
 game_hud = NodePath("../GameHud")
+director = NodePath("../GameDirector")
