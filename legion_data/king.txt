@@ -1,2 +1,5 @@
-wood,income,hp_delta,atk_delta,regen_delta
-80,3,80,4,1
+# 自定规格：国王初始三围与模型策划案未还原（策划案 6 只给了强化档位），写在这里。
+# model_id 借原版单位外观；地图里若有国王单位，export-legion-slk.js 会列出候选，可改成那个 id。
+# 强化：每次 wood 木材、+income 收入；生命 +hp_delta，攻击 +atk_delta，回复 +regen_delta（策划案 5.5、5.7）。
+model_id,hp,atk_min,atk_max,as,rng,at,df,regen,wood,income,hp_delta,atk_delta,regen_delta
+Nplh,2000,40,50,1.0,500,国王,王甲,1,80,3,80,4,1
