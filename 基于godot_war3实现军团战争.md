@@ -87,7 +87,7 @@ legion_main.tscn → LegionMatchMode（独立节点，@export 注入依赖）
 
 - 已做：军团脚本共用 `tools/map-parse/src/legion-paths.js`，不再写死本机路径；`LEGION_PARSED_DIR` 可覆盖已解析目录。
 - 已做：只解析军团图用 `node tools/map-parse/src/parse-loose.js <解包目录>`（本机是 `D:\game2\rpg\mpqediten64\Work`），输出 `assets/map-parsed/legiontd`。`bootstrap.config.json` 也有 `LegionTD` 条目（读 `LEGION_LOOSE_DIR`），但 bootstrap 默认结束时删除 `assets/.staging`；已经解好魔兽资源时不要跑完整 bootstrap，要跑就加 `--keep-staging`。
-- 已做：地形贴图 `cd tools/asset-convert && npm run convert:legion-td`，从 `assets/.staging/wc3-assets` 转 `TerrainArt/**`（Cityscape、Outland 等）、悬崖、水和 Cityscape / Outland 装饰物。不转时地表是缺图。
+- 已做：地形贴图 `cd tools/asset-convert && npm run convert:legion-td`，从 `assets/.staging/wc3-assets` 转 `TerrainArt/**`（Cityscape、Outland 等）、悬崖贴图与模型（`Doodads/Terrain/CityCliffs`、`Cliffs`）、水和 Cityscape / Outland 装饰物。不转时地表缺图、悬崖缺网格。悬崖只读 `.gltf/.glb`，不依赖 `.scn` 烘焙；烘焙找 Godot 的顺序是 `GODOT` / `GODOT_BIN` 环境变量 → `bootstrap.config.json` 的 `godot.path` → 常见安装位置。
 - 未做：军团模型进 mod overlay，放到阶段 2 之前。
 
 验收只看游戏窗口：底栏数字、命令格、场上模型和血条。
@@ -290,7 +290,7 @@ seat,side,region,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 编号即顺序。前一阶段在游戏窗口里验收通过，再开下一阶段。
 
-### 阶段 0 · 用军团地图开一局
+### 阶段 0 · 用军团地图开一局（2026-09-28 窗口验收通过）
 
 前置：第 2.1 节的数据可复现。
 
