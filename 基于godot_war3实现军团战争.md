@@ -123,12 +123,14 @@ legion_main.tscn → LegionMatchMode（独立节点，@export 注入依赖）
 
 ```text
 # 自定规格。区域来自 w3r；出怪点、漏怪点、国王坐标人工标定，阶段 1 在窗口里核对。
-seat,side,region,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
-0,L,RctPlayer_0,...
+seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
+0,L,RctPlayer_0,1,-5696,5120,-5696,3200,,
 ...
-8,L,NONE,...      # 电脑席，持有左国王
-9,R,NONE,...      # 电脑席，持有右国王
+8,L,NONE,1,,,,,-3520,2816      # 电脑席，持有左国王
+9,R,NONE,1,,,,,3520,2816       # 电脑席，持有右国王
 ```
+
+国王坐标只写在持有它的电脑席那一行，玩家行留空，避免同一阵营写多份。读表：`LegionSeats`（Data）。
 
 阵营规则：
 
@@ -315,6 +317,20 @@ seat,side,region,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 - 游戏窗口里悬崖、水和路可辨认。
 - 点一个建造格，状态行坐标与 `cells.txt` 一致。
 - 出怪点、漏怪点、国王坐标都在可走格上；漏怪点到国王连通。
+
+已接好：
+
+- `legion_data/seats.txt`：8 个区域排成 4 列 × 2 行（左 0–3、右 4–7，`mid_road` 在两行之间 y=2816）。出怪点 / 漏怪点占位为各区域中列最上 / 最下一格格心（自上而下是假定）；国王占位为 `mid_road` 与 `gap_0_1` / `gap_2_3` 的交点 (∓3520, 2816)。1v1 启用席位 0、4、8、9。
+- `LegionSeats`（Data）读表；`LegionCalibration`（Logic）用 `PathQuery` 检查每个启用席位的点是否可走、出怪→漏怪和漏怪→国王是否连通；`LegionDebugOverlay`（Present）贴地画格子和标记。
+- GM 面板新增通用 `add_section`；军团模式挂「军团标定（seats.txt）」一节：
+  - 「显示建造格 / 出怪 / 漏怪 / 国王」：启用区域的格子绿框，未启用灰框，不可走或不可造红框；绿菱形出怪点，橙菱形漏怪点，红框叉国王。
+  - 「左键点选坐标」：左键地面后，面板和状态行写出点击坐标、是否可走、最近建造格的区域 / 列 / 行 / 格心；坐标 `x,y` 复制到剪贴板，可直接粘进 `seats.txt`。
+  - 「检查连通」：逐项列出结果；青线是连通路径，品红直线是不连通。
+  - 「重载 seats.txt」：改表后不用重启。
+- `GameDirector` 新增公开只读方法 `ground_wc3_at_screen`、`get_path_query`、`get_heightfield`。
+- 镜头改为按 `local_seat`（默认 0）在 `seats.txt` 里查区域。
+
+标定流程：打开 GM（` 或 F4）→ 勾「显示…」看占位点落在哪 → 勾「左键点选坐标」，在窗口里点出真正的出怪口、漏怪口和国王位置 → 把剪贴板里的坐标填进 `seats.txt` → 「重载」→「检查连通」到全部通过。
 
 ### 阶段 2 · 造兵、阵营、走路、国王
 
