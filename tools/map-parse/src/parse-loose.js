@@ -13,6 +13,7 @@ import { parseDoodadsDoo } from "./parsers/doo-doodads.js";
 import { parseUnitsDoo } from "./parsers/doo-units.js";
 import { parseW3r } from "./parsers/w3r.js";
 import { parseWpm } from "./parsers/wpm.js";
+import { blpBufferToPng } from "../../asset-convert/src/convert-blp.js";
 
 const mapDir = path.resolve(process.argv[2] ?? "");
 const outIdx = process.argv.indexOf("--out");
@@ -131,6 +132,21 @@ try {
   errors.pathing = String(e);
 }
 
+let war3mapMap = null;
+try {
+  const blp = read("war3mapMap.blp");
+  const tga = read("war3mapMap.tga");
+  if (blp) {
+    fs.writeFileSync(path.join(outDir, "war3mapMap.png"), blpBufferToPng(blp));
+    war3mapMap = "war3mapMap.png";
+  } else if (tga) {
+    fs.writeFileSync(path.join(outDir, "war3mapMap.tga"), tga);
+    war3mapMap = "war3mapMap.tga";
+  }
+} catch (e) {
+  errors.war3mapMap = String(e);
+}
+
 const summary = {
   version: 1,
   parsedAt: new Date().toISOString(),
@@ -164,6 +180,7 @@ const summary = {
   doodads: doodads ? { count: doodads.count } : null,
   regions: regions ? { count: regions.count, names: regions.regions.map((x) => x.name) } : null,
   pathing: pathing ? { width: pathing.width, height: pathing.height } : null,
+  war3mapMap,
   errors: Object.keys(errors).length ? errors : undefined,
 };
 writeJson(path.join(outDir, "summary.json"), summary);

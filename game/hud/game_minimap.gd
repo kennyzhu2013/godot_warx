@@ -87,6 +87,12 @@ func set_id_catalog(catalog: Wc3IdCatalog) -> void:
 func load_from_map_dir(map_dir: String) -> bool:
 	var img := _try_load_war3map(map_dir)
 	if img == null:
+		# 换图失败时清掉上一张，避免军团局继续显示 Echo 的 war3mapMap。
+		_image = null
+		if _tex != null:
+			_tex.texture = null
+		if _overlay != null:
+			_overlay.queue_redraw()
 		return false
 	_image = img
 	if _tex != null:
