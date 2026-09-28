@@ -352,7 +352,24 @@ static func in_engage_range(attacker: Node3D, target: Node3D, hysteresis: float 
 	return distance_wc3(attacker, target) <= lim
 
 
-## 双方是否敌对（竖切简化）。
+## 本局 owner → 阵营名；空 = 只按 owner 判敌对。对局模式开局装入、结束清掉。
+static var _owner_sides: Dictionary[int, String] = {}
+
+
+static func set_owner_sides(sides: Dictionary[int, String]) -> void:
+	_owner_sides = sides.duplicate()
+
+
+static func clear_owner_sides() -> void:
+	_owner_sides = {}
+
+
+## owner 所在阵营；未装阵营表或 owner 不在表里时为空串。
+static func side_of_owner(owner_id: int) -> String:
+	return str(_owner_sides.get(owner_id, ""))
+
+
+## 双方是否敌对（竖切简化）。两个 owner 都在阵营表里时按阵营判，否则按 owner。
 static func is_hostile(a: Node, b: Node) -> bool:
 	if a == null or b == null or a == b:
 		return false
@@ -362,6 +379,8 @@ static func is_hostile(a: Node, b: Node) -> bool:
 	var ob := owner_of(b)
 	if oa == ob:
 		return false
+	if _owner_sides.has(oa) and _owner_sides.has(ob):
+		return _owner_sides[oa] != _owner_sides[ob]
 	if is_neutral_owner(oa) and is_neutral_owner(ob):
 		return false
 	return true
