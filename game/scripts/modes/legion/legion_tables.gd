@@ -31,6 +31,19 @@ static func read_rows(file_name: String) -> Array[Dictionary]:
 	return rows
 
 
+## 离 wc3 最近的建造格（格心距离 ≤ max_dist）；没有时返回空字典。
+static func nearest_cell(cells: Array[Dictionary], wc3: Vector2, max_dist: float = 64.0) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := max_dist
+	for row in cells:
+		var p := Vector2(float(row.get("x", "0")), float(row.get("y", "0")))
+		var d := p.distance_to(wc3)
+		if d <= best_d:
+			best_d = d
+			best = row
+	return best
+
+
 ## cells.txt 中某建造区域所有格中心的外包框中心（WC3 XY）。区域不存在时返回 Vector2.INF。
 static func region_center(cells: Array[Dictionary], region: String) -> Vector2:
 	var lo := Vector2(INF, INF)
