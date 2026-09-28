@@ -222,6 +222,21 @@ func is_session_ready() -> bool:
 	return _bootstrapped
 
 
+## 屏幕点 → 地面 WC3 XY；未命中返回 Vector2.INF。供对局模式标定 / 调试用。
+func ground_wc3_at_screen(screen_pos: Vector2) -> Vector2:
+	return _screen_to_goal_wc3(screen_pos)
+
+
+## 本局寻路查询（地图加载后才有）。
+func get_path_query() -> PathQuery:
+	return _path_query
+
+
+## 本局高度图（地图加载后才有）。
+func get_heightfield() -> Wc3Heightfield:
+	return _heightfield
+
+
 ## 按本地玩家种族切换光标图集（human/orc/undead/nightelf）。
 func _apply_cursor_race(race_id: String) -> void:
 	if game_cursor == null:

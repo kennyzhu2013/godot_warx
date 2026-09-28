@@ -13,6 +13,8 @@ var _ramp_check: CheckBox
 var _path_dbg_check: CheckBox
 var _hp_bar_check: CheckBox
 var _hint: Label
+## 面板主体；add_section 的分节插在 _hint 之前
+var _content: VBoxContainer
 var _map: MapLoader
 var _director: Node
 var _health_bars: HealthBarManager
@@ -75,6 +77,7 @@ func _build_ui() -> void:
 	v.mouse_filter = Control.MOUSE_FILTER_STOP
 	v.add_theme_constant_override("separation", 6)
 	margin.add_child(v)
+	_content = v
 
 	var title := Label.new()
 	title.text = "GM / 调试（` 或 F4）"
@@ -139,6 +142,26 @@ func _build_ui() -> void:
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
 	v.add_child(_hint)
+
+
+## 对局模式等外部模块追加一节（分隔线 + 标题 + 容器）；需在面板 _ready 之后调用。
+## 返回的容器由调用方填控件。
+func add_section(title_text: String) -> VBoxContainer:
+	if _content == null:
+		return null
+	var sep := HSeparator.new()
+	var title := Label.new()
+	title.text = title_text
+	title.add_theme_font_size_override("font_size", 14)
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_STOP
+	box.add_theme_constant_override("separation", 6)
+	_content.add_child(sep)
+	_content.add_child(title)
+	_content.add_child(box)
+	if _hint != null:
+		_content.move_child(_hint, _content.get_child_count() - 1)
+	return box
 
 
 func _add_btn(parent: Control, text: String, cb: Callable) -> void:
