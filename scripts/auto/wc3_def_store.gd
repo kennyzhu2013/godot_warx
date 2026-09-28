@@ -23,6 +23,18 @@ var _registry: Dictionary[String, Dictionary] = {}
 var _tables: Dictionary[String, Dictionary] = {}
 ## table_name → 主键顺序（与 JSON records 顺序一致）
 var _orders: Dictionary[String, Array] = {}
+## table_name →（主键 → 原始 SLK 记录）。叠加层按字段合并时要用原始记录，行 Resource 不可逆。
+var _raw: Dictionary[String, Dictionary] = {}
+## overlay_id →（table_name →（主键 → OverlayPrior））：叠加前的状态，clear_overlay 用来还原。
+var _overlay_priors: Dictionary[String, Dictionary] = {}
+
+
+class OverlayPrior:
+	extends RefCounted
+	var row: Resource = null
+	var raw: Dictionary = {}
+	## 叠加前表里没有这一行
+	var was_absent: bool = true
 
 
 func _ready() -> void:
@@ -123,25 +135,14 @@ func load_table(table_name: String) -> int:
 	var factory: Callable = spec["factory"]
 	var by_id: Dictionary = {}
 	var order: Array[String] = []
+	var raw_by_id: Dictionary = {}
+	_tables[table_name] = by_id
+	_orders[table_name] = order
+	_raw[table_name] = raw_by_id
 	if not FileAccess.file_exists(path):
 		AppLog.warn(AppLog.Layer.CATALOG, "DefStore", "缺少 %s" % path)
-		_tables[table_name] = by_id
-		_orders[table_name] = order
 		return 0
-	var text := RuntimeAssets.read_utf8_text(path)
-	if text.is_empty():
-		_tables[table_name] = by_id
-		_orders[table_name] = order
-		return 0
-	var data: Variant = RuntimeAssets.parse_json_text(text)
-	if typeof(data) != TYPE_DICTIONARY:
-		_tables[table_name] = by_id
-		_orders[table_name] = order
-		return 0
-	for rec in data.get("records", []):
-		if typeof(rec) != TYPE_DICTIONARY:
-			continue
-		var rec_dict := rec as Dictionary
+	for rec_dict in _read_records(path):
 		var id := str(rec_dict.get(key_field, "")).strip_edges()
 		if id.is_empty():
 			continue
@@ -149,9 +150,8 @@ func load_table(table_name: String) -> int:
 		if row == null:
 			continue
 		by_id[id] = row
+		raw_by_id[id] = rec_dict
 		order.append(id)
-	_tables[table_name] = by_id
-	_orders[table_name] = order
 	AppLog.info(
 		AppLog.Layer.CATALOG,
 		"DefStore",
@@ -199,6 +199,116 @@ func get_ids(table_name: String) -> Array[String]:
 ## [return int] 行数
 func count(table_name: String) -> int:
 	return get_table(table_name).size()
+
+
+## 原始 SLK 记录的副本（字段名同 JSON）；没有时返回空字典。叠加层拿它当模板克隆新行。
+func get_record(table_name: String, id: String) -> Dictionary:
+	ensure_table(table_name)
+	var raw_by_id: Dictionary = _raw.get(table_name, {})
+	var rec: Variant = raw_by_id.get(id)
+	if typeof(rec) != TYPE_DICTIONARY:
+		return {}
+	return (rec as Dictionary).duplicate(true)
+
+
+## 本局叠加一组行（按对局装入、结束时 clear_overlay 还原；不叠加时表与 slk-exported 一致）。
+## 同主键：与现有原始记录逐字段合并，新值覆盖，再经行工厂重建；新主键追加到表尾。
+## 同一 overlay_id 可多次调用，后调用的字段覆盖先调用的。返回写入行数。
+func apply_overlay_records(overlay_id: String, table_name: String, records: Array) -> int:
+	if overlay_id.is_empty() or not _registry.has(table_name):
+		AppLog.warn(AppLog.Layer.CATALOG, "DefStore", "叠加参数无效: %s / %s" % [overlay_id, table_name])
+		return 0
+	ensure_table(table_name)
+	var spec: Dictionary = _registry[table_name]
+	var key_field := str(spec["key_field"])
+	var factory: Callable = spec["factory"]
+	var by_id: Dictionary = _tables[table_name]
+	var order: Array = _orders[table_name]
+	var raw_by_id: Dictionary = _raw[table_name]
+	var priors_by_table: Dictionary = _overlay_priors.get_or_add(overlay_id, {})
+	var priors: Dictionary = priors_by_table.get_or_add(table_name, {})
+	var written := 0
+	for rec in records:
+		if typeof(rec) != TYPE_DICTIONARY:
+			continue
+		var id := str((rec as Dictionary).get(key_field, "")).strip_edges()
+		if id.is_empty():
+			continue
+		var merged: Dictionary = (raw_by_id.get(id, {}) as Dictionary).duplicate(true)
+		merged.merge(rec as Dictionary, true)
+		merged[key_field] = id
+		var row: Variant = factory.call(merged)
+		if row == null:
+			continue
+		if not priors.has(id):
+			var prior := OverlayPrior.new()
+			prior.was_absent = not by_id.has(id)
+			if not prior.was_absent:
+				prior.row = by_id[id] as Resource
+				prior.raw = raw_by_id.get(id, {}) as Dictionary
+			priors[id] = prior
+		if not by_id.has(id):
+			order.append(id)
+		by_id[id] = row
+		raw_by_id[id] = merged
+		written += 1
+	return written
+
+
+## 从一棵与 slk-exported 同构的目录（如 map-parsed/<图>/slk）叠加指定表；缺文件的表跳过。
+## 返回 表名 → 写入行数。
+func apply_overlay_dir(overlay_id: String, root: String, table_names: PackedStringArray) -> Dictionary:
+	var out: Dictionary = {}
+	for table_name in table_names:
+		if not _registry.has(table_name):
+			continue
+		var path := root.path_join(str(_registry[table_name]["path"]))
+		if not FileAccess.file_exists(RuntimeAssets.project_abs(path)):
+			continue
+		out[table_name] = apply_overlay_records(overlay_id, table_name, _read_records(path))
+	return out
+
+
+## 撤掉一个叠加层，还原叠加前的行。
+func clear_overlay(overlay_id: String) -> void:
+	if not _overlay_priors.has(overlay_id):
+		return
+	var priors_by_table: Dictionary = _overlay_priors[overlay_id]
+	for table_name in priors_by_table.keys():
+		if not _tables.has(table_name):
+			continue
+		var by_id: Dictionary = _tables[table_name]
+		var order: Array = _orders[table_name]
+		var raw_by_id: Dictionary = _raw[table_name]
+		var priors: Dictionary = priors_by_table[table_name]
+		for id in priors.keys():
+			var prior := priors[id] as OverlayPrior
+			if prior.was_absent:
+				by_id.erase(id)
+				raw_by_id.erase(id)
+				order.erase(id)
+			else:
+				by_id[id] = prior.row
+				raw_by_id[id] = prior.raw
+	_overlay_priors.erase(overlay_id)
+
+
+func has_overlay(overlay_id: String) -> bool:
+	return _overlay_priors.has(overlay_id)
+
+
+func _read_records(path: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var text := RuntimeAssets.read_utf8_text(path)
+	if text.is_empty():
+		return out
+	var data: Variant = RuntimeAssets.parse_json_text(text)
+	if typeof(data) != TYPE_DICTIONARY:
+		return out
+	for rec in (data as Dictionary).get("records", []):
+		if typeof(rec) == TYPE_DICTIONARY:
+			out.append(rec as Dictionary)
+	return out
 
 
 ## 按谓词筛主键。predicate: Callable(id: String, row: Resource) -> bool

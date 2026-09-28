@@ -69,3 +69,30 @@ func king_of(side: String) -> Vector2:
 		if s.side == side and s.king != Vector2.INF:
 			return s.king
 	return Vector2.INF
+
+
+## 阵营电脑席（持有国王的那一行；没有国王行时取该阵营第一个无区域席）；没有时 -1。
+func computer_seat_of(side: String) -> int:
+	var fallback := -1
+	for s in seats:
+		if s.side != side or s.has_region():
+			continue
+		if s.king != Vector2.INF:
+			return s.seat
+		if fallback < 0:
+			fallback = s.seat
+	return fallback
+
+
+## 另一个阵营（L ↔ R）。
+static func opposite(side: String) -> String:
+	return "R" if side == "L" else "L"
+
+
+## 全部席位 → 阵营，注入 CombatQuery.set_owner_sides（owner 即席位号）。
+func side_table() -> Dictionary[int, String]:
+	var out: Dictionary[int, String] = {}
+	for s in seats:
+		if s.seat >= 0 and not s.side.is_empty():
+			out[s.seat] = s.side
+	return out

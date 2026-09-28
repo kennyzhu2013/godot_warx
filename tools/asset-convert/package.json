@@ -16,6 +16,7 @@
     "convert:lost-temple": "node scripts/convert-lost-temple.mjs",
     "convert:echo-isles": "node scripts/convert-echo-isles.mjs",
     "convert:legion-td": "node scripts/convert-legion-td.mjs",
+    "convert:legion-units": "node scripts/convert-legion-units.mjs",
     "reconvert:additive": "node scripts/reconvert-additive-geosets.mjs"
   },
   "dependencies": {

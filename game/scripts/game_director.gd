@@ -66,6 +66,8 @@ var _cam_max := Vector2(6912.0, 4864.0)
 var _rng := RandomNumberGenerator.new()
 var _bootstrapped: bool = false
 var _session: GameSession = null
+## 对局模式接管了开局（match_mode 返回了 session）；命令格与右键指令先问模式。
+var _mode_active: bool = false
 ## 共享 PathQuery：所有 UnitNavigator 注入同一实例，避免每单位一份 A* 图。
 var _path_query: PathQuery = null
 var _pathing: Wc3PathingMap = null
@@ -235,6 +237,66 @@ func get_path_query() -> PathQuery:
 ## 本局高度图（地图加载后才有）。
 func get_heightfield() -> Wc3Heightfield:
 	return _heightfield
+
+
+## 本局命令路由（地图加载后才有）。对局模式给单位下移动 / 攻击移动用。
+func get_command_router() -> CommandRouter:
+	return _command_router
+
+
+## 对局模式摆一个单位：不扣资源、不动人口。facing_rad 为魔兽朝向（弧度）。失败返回 null。
+func spawn_mode_unit(type_id: String, wc3_xy: Vector2, owner: int, facing_rad: float = 4.712389) -> Node3D:
+	if map_root == null or _heightfield == null or type_id.is_empty():
+		return null
+	var entry := {
+		"typeId": type_id,
+		"position": {"x": wc3_xy.x, "y": wc3_xy.y, "z": 0.0},
+		"angle": facing_rad,
+		"scale": {"x": 1.0, "y": 1.0, "z": 1.0},
+		"owner": owner,
+		"flags": 2,
+		"creationNumber": _alloc_runtime_cn(),
+		"variation": 0,
+	}
+	var node := map_root.add_unit_instance(entry, _heightfield.as_dict_view())
+	if node == null:
+		return null
+	UnitLife.ensure(node)
+	_ensure_unit_ai(node)
+	if health_bar_manager:
+		health_bar_manager.resync()
+	return node
+
+
+## 对局模式拆掉一个单位（出售 / 清场）：移出选中、停掉控制器、退还本地人口，再从地图删除。
+func remove_mode_unit(unit: Node3D) -> void:
+	if unit == null or not is_instance_valid(unit):
+		return
+	if unit_selector != null and unit_selector.has_method("deselect_unit"):
+		unit_selector.call("deselect_unit", unit)
+	var ac := unit.get_node_or_null("AttackController") as AttackController
+	if ac != null:
+		ac.cancel()
+	var nav := unit.get_node_or_null("UnitNavigator") as UnitNavigator
+	if nav != null:
+		nav.stop()
+	_release_unit_food(unit)
+	_on_corpse_expired(unit)
+	if health_bar_manager:
+		health_bar_manager.resync()
+
+
+## 按当前选中重建肖像与命令格（对局模式改了库存或单位后调用）。
+func refresh_selection_hud() -> void:
+	if unit_selector == null:
+		return
+	var primary: Node3D = null
+	var selected: Array = []
+	if unit_selector.has_method("get_primary"):
+		primary = unit_selector.call("get_primary") as Node3D
+	if unit_selector.has_method("get_selected"):
+		selected = unit_selector.call("get_selected")
+	_on_selection_changed(primary, selected)
 
 
 ## 按本地玩家种族切换光标图集（human/orc/undead/nightelf）。
@@ -826,6 +888,7 @@ func _bootstrap_match_mode() -> bool:
 	if session == null:
 		return false
 	_session = session
+	_mode_active = true
 	_apply_cursor_race(session.local_race)
 	if game_hud:
 		game_hud.bind_stock(_session.local_stock())
@@ -1072,6 +1135,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
+			if _mode_active and match_mode != null and match_mode.blocks_unit_orders(_get_selected_safe()):
+				get_viewport().set_input_as_handled()
+				return
 			if mb.shift_pressed and enable_move_command:
 				if _issue_group_move_command(mb.position, FormationFollow.FORMATION_RECT):
 					get_viewport().set_input_as_handled()
@@ -4484,6 +4550,8 @@ func _on_command_action_rclick(action_id: String) -> void:
 func _on_command_action(
 	action_id: String, source: int = UnitOrder.Source.PANEL
 ) -> void:
+	if _mode_active and match_mode != null and match_mode.handle_command_action(action_id):
+		return
 	match action_id:
 		CommandCard.ACTION_MOVE:
 			if enable_move_command:
@@ -4590,6 +4658,8 @@ func _on_selection_changed(primary: Node3D, selected: Array) -> void:
 	if game_hud == null:
 		_sync_rally_flag_for_selection()
 		return
+	if _mode_active and match_mode != null and _apply_mode_command_card(primary, selected):
+		return
 	if primary == null or selected.is_empty():
 		_card_supports_move = false
 		_card_is_peasant = false
@@ -4671,6 +4741,27 @@ func _on_selection_changed(primary: Node3D, selected: Array) -> void:
 			game_hud.set_status("已选 %s" % tid)
 	_sync_build_hud_for_selection()
 	_sync_rally_flag_for_selection()
+
+
+## 对局模式给出命令格时用它，返回 false 表示模式不接管、走默认命令格。
+func _apply_mode_command_card(primary: Node3D, selected: Array) -> bool:
+	match_mode.selection_changed(primary, selected)
+	var card: Array = match_mode.command_card(primary, selected)
+	if card.is_empty():
+		return false
+	_card_supports_move = false
+	_card_is_peasant = false
+	_unbind_hud_build_site()
+	if primary == null or selected.is_empty():
+		game_hud.set_selection_info(SelectionInfoBuilder.build_empty())
+	else:
+		_apply_selection_info_to_hud(primary, selected)
+	game_hud.clear_build_progress()
+	if game_hud.has_method("clear_train_queue"):
+		game_hud.clear_train_queue()
+	_apply_command_card(card)
+	_sync_rally_flag_for_selection()
+	return true
 
 
 func _apply_selection_info_to_hud(primary: Node3D, selected: Array) -> void:

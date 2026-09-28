@@ -16,6 +16,22 @@ const _TFT: Dictionary = {
 	"hero": {"small": 1.0, "medium": 1.0, "large": 1.0, "fort": 0.5, "hero": 1.0, "none": 1.0, "divine": 0.05},
 }
 
+## 本局倍率表（同 _TFT 形状）；空 = 用 TFT。对局模式开局装入、结束清掉。
+static var _match_table: Dictionary = {}
+
+
+static func set_match_table(table: Dictionary) -> void:
+	_match_table = table.duplicate(true)
+
+
+static func clear_match_table() -> void:
+	_match_table = {}
+
+
+static func has_match_table() -> bool:
+	return not _match_table.is_empty()
+
+
 ## 归一化攻击类型
 static func normalize_atk(atk: String) -> String:
 	var a := atk.strip_edges().to_lower()
@@ -47,7 +63,8 @@ static func normalize_def(def: String) -> String:
 static func multiplier(atk_type: String, def_type: String) -> float:
 	var atk := normalize_atk(atk_type)
 	var def := normalize_def(def_type)
-	var row: Variant = _TFT.get(atk, _TFT["normal"])
+	var table: Dictionary = _match_table if not _match_table.is_empty() else _TFT
+	var row: Variant = table.get(atk, table.get("normal", {}))
 	if typeof(row) != TYPE_DICTIONARY:
 		return 1.0
 	return float((row as Dictionary).get(def, 1.0))

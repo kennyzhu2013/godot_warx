@@ -92,6 +92,18 @@ static func regenerate(node: Node3D, amount: float) -> void:
 	set_life(node, cur + amount)
 
 
+## 上限加 delta，存活时当前生命同加同量（强化类效果）。上限不低于 1。
+static func raise_max_life(node: Node3D, delta: float) -> void:
+	ensure(node)
+	if node == null:
+		return
+	var cur := get_life(node)
+	var mx := maxf(get_max_life(node) + delta, 1.0)
+	node.set_meta(META_MAX_LIFE, mx)
+	if cur > 0.0:
+		node.set_meta(META_LIFE, clampf(cur + delta, 0.0, mx))
+
+
 static func set_ratio(node: Node3D, r: float) -> void:
 	ensure(node)
 	if node == null:
