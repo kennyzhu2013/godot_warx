@@ -86,7 +86,8 @@ legion_main.tscn → LegionMatchMode（独立节点，@export 注入依赖）
 现状：
 
 - 已做：军团脚本共用 `tools/map-parse/src/legion-paths.js`，不再写死本机路径；`LEGION_PARSED_DIR` 可覆盖已解析目录。
-- 已做：`bootstrap.config.json` 有 `LegionTD` 条目，读已解包的地图目录。先把加密 w3x 解包，然后 `set LEGION_LOOSE_DIR=<解包目录>` 再跑 `node tools/bootstrap.mjs`；没设置时这一项跳过，不中断其它地图。也可以单跑 `node tools/map-parse/src/parse-loose.js <解包目录>`。
+- 已做：只解析军团图用 `node tools/map-parse/src/parse-loose.js <解包目录>`（本机是 `D:\game2\rpg\mpqediten64\Work`），输出 `assets/map-parsed/legiontd`。`bootstrap.config.json` 也有 `LegionTD` 条目（读 `LEGION_LOOSE_DIR`），但 bootstrap 默认结束时删除 `assets/.staging`；已经解好魔兽资源时不要跑完整 bootstrap，要跑就加 `--keep-staging`。
+- 已做：地形贴图 `cd tools/asset-convert && npm run convert:legion-td`，从 `assets/.staging/wc3-assets` 转 `TerrainArt/**`（Cityscape、Outland 等）、悬崖、水和 Cityscape / Outland 装饰物。不转时地表是缺图。
 - 未做：军团模型进 mod overlay，放到阶段 2 之前。
 
 验收只看游戏窗口：底栏数字、命令格、场上模型和血条。
@@ -299,7 +300,11 @@ seat,side,region,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 已接好：`MatchMode` 基类（`game/scripts/modes/match_mode.gd`）；`GameDirector.match_mode` 绑定后由模式建 session 并跳过 Melee，`session_ready` 后调 `begin`；`LegionMatchMode` 设库存、镜头对准 `local_region`（默认 `RctPlayer_0`）的格子中心，状态行写出区域和库存；`LegionTables` 读 `legion_data`；`legion_main.tscn` 继承 `game_main`。
 
-验收步骤：编辑器打开项目一次（注册新的 `class_name`），F6 运行 `game/scenes/legion_main.tscn` 或 `legion_ui/legion_boot.tscn`，对照上面的验收；再 F6 `game_main.tscn` 确认 Echo 不受影响。
+`legion_main.tscn` 关掉了寻路覆盖和调试栅格（`show_pathing_ground = false`、`view_grid_level = 0`），窗口里看的是地形本身。
+
+场景里的节点导出（`match_mode`、`rts_camera`、`game_hud`）必须在节点头写 `node_paths=PackedStringArray(...)`，否则 NodePath 赋不上，属性为 null。`GameDirector` 另有兜底：`match_mode` 为空时取同级第一个 `MatchMode` 节点；接上时底栏状态行是「军团战争 · RctPlayer_0 · 金300 木114 人口0/7」；`debug_log.json` 调到 INFO 时启动日志 `bind ... mode=` 也会写出模式名（`melee` 表示没接上）。
+
+验收步骤：先跑 `convert:legion-td`；编辑器打开项目一次（注册新的 `class_name`），F6 运行 `game/scenes/legion_main.tscn` 或 `legion_ui/legion_boot.tscn`，对照上面的验收；再 F6 `game_main.tscn` 确认 Echo 不受影响。
 
 ### 阶段 1 · 地图对位与席位表
 
