@@ -164,11 +164,16 @@ func _set_report(text: String) -> void:
 
 # —— 点选坐标 ——
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+	# 左键点选必须走 _input：UnitSelector 在 _input 里会把左键标成已处理，_unhandled_input 收不到。
+	# 本节点在场景树末尾，_input 先于选择器。
 	if not _pick_on or director == null:
 		return
 	var mb := event as InputEventMouseButton
 	if mb == null or not mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	# 点在 GM 面板等界面上时交给控件，否则点选会把「检查连通」和叠层开关一起吃掉。
+	if get_viewport().gui_get_hovered_control() != null:
 		return
 	var wc3 := director.ground_wc3_at_screen(mb.position)
 	if wc3 == Vector2.INF:
@@ -186,3 +191,4 @@ func _unhandled_input(event: InputEvent) -> void:
 	_set_report(text)
 	if game_hud != null:
 		game_hud.set_status(text)
+	get_viewport().set_input_as_handled()
