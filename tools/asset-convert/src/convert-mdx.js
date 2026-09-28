@@ -1129,6 +1129,22 @@ function findBlpOnDisk(logical, inDir) {
   return fs.existsSync(cur) ? cur : null;
 }
 
+/**
+ * --in 之外再找贴图的根（ASSET_CONVERT_EXTRA_IN，按系统路径分隔符分隔）。
+ * 地图目录里的模型常引用原版贴图，这时回退到原版解包根。
+ */
+function findBlpInExtraRoots(logical) {
+	const roots = String(process.env.ASSET_CONVERT_EXTRA_IN || "")
+		.split(path.delimiter)
+		.map((s) => s.trim())
+		.filter(Boolean);
+	for (const root of roots) {
+		const hit = findBlpOnDisk(logical, root);
+		if (hit) return hit;
+	}
+	return null;
+}
+
 function resolveTexturePng(
 	imagePath,
 	inDir,
@@ -1166,7 +1182,7 @@ function resolveTexturePng(
 		};
 	}
 
-	const blpSrc = findBlpOnDisk(raw, inDir);
+	const blpSrc = findBlpOnDisk(raw, inDir) ?? findBlpInExtraRoots(raw);
 	if (!blpSrc) {
 		getLog().warnOnce(
 			`miss-tex:${raw}`,
