@@ -263,10 +263,15 @@ func _resolve_exports() -> void:
 		health_bar_manager = get_node_or_null("../HealthBarManager") as HealthBarManager
 		if health_bar_manager == null and parent_n != null:
 			health_bar_manager = parent_n.get_node_or_null("HealthBarManager") as HealthBarManager
+	if match_mode == null and parent_n != null:
+		for c in parent_n.get_children():
+			if c is MatchMode:
+				match_mode = c as MatchMode
+				break
 	AppLog.info(
 		AppLog.Layer.GAME,
 		"GameDirector",
-		"bind map=%s cam=%s hud=%s sel=%s cursor=%s hpbar=%s"
+		"bind map=%s cam=%s hud=%s sel=%s cursor=%s hpbar=%s mode=%s"
 		% [
 			map_root != null,
 			rts_camera != null,
@@ -274,6 +279,7 @@ func _resolve_exports() -> void:
 			unit_selector != null,
 			game_cursor != null,
 			health_bar_manager != null,
+			str(match_mode.name) if match_mode != null else "melee",
 		]
 	)
 

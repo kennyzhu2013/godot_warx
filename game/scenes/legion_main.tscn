@@ -7,9 +7,12 @@
 
 [node name="MapRoot" parent="."]
 map_dir = "res://assets/map-parsed/legiontd"
+show_pathing_ground = false
 
-[node name="GameDirector" parent="."]
+[node name="GameDirector" parent="." node_paths=PackedStringArray("match_mode")]
 map_dir = "res://assets/map-parsed/legiontd"
+view_grid_level = 0
+show_pathing_ground = false
 match_mode = NodePath("../LegionMatchMode")
 random_start_location = false
 spawn_melee_base = false
@@ -19,7 +22,7 @@ dev_spawn_priest = false
 [node name="GameLoadingScreen" parent="."]
 map_title = "军团战争 TD"
 
-[node name="LegionMatchMode" type="Node" parent="."]
+[node name="LegionMatchMode" type="Node" parent="." node_paths=PackedStringArray("rts_camera", "game_hud")]
 script = ExtResource("2_mode")
 rts_camera = NodePath("../RtsCamera")
 game_hud = NodePath("../GameHud")
