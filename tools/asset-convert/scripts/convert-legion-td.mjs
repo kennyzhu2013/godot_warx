@@ -19,6 +19,9 @@ const includes = [
   "ReplaceableTextures/Splash/**",
   "Textures/ShorelineParticleXY.blp",
   "Textures/White_64_Foam1.blp",
+  // 悬崖模型：Wc3CliffCatalog 按 Doodads/Terrain/{Cliffs|CityCliffs}/…{TAG}{n}.glb 探测，不读 .scn
+  "Doodads/Terrain/CityCliffs/**",
+  "Doodads/Terrain/Cliffs/**",
   // 装饰物
   "Doodads/Cityscape/**",
   "Doodads/Outland/**",
