@@ -10,12 +10,23 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(__dirname, "../..");
 
+/** bootstrap.config.json 的 godot.path；单跑 asset-convert / bake 时与 bootstrap 用同一个 Godot。 */
+function configuredGodotBin() {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "tools", "bootstrap.config.json"), "utf8"));
+    return String(cfg?.godot?.path || "");
+  } catch {
+    return "";
+  }
+}
+
 export function candidateGodotBins() {
   const home = os.homedir();
   const desktop = path.join(home, "Desktop");
   return [
     process.env.GODOT,
     process.env.GODOT_BIN,
+    configuredGodotBin(),
     path.join(desktop, "Godot_v4.6.3-stable_win64_console.exe"),
     path.join(desktop, "Godot_v4.6.3-stable_win64.exe"),
     path.join(desktop, "Godot_v4.6.1-stable_win64_console.exe"),
