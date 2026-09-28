@@ -28,6 +28,10 @@ func create_session(map_dir: String, local_player: int) -> GameSession:
 
 
 func begin(session: GameSession) -> void:
+	if rts_camera == null:
+		rts_camera = get_node_or_null("../RtsCamera") as RtsCamera
+	if game_hud == null:
+		game_hud = get_node_or_null("../GameHud") as GameHud
 	var center := LegionTables.region_center(LegionTables.read_rows(LegionTables.CELLS_FILE), local_region)
 	if center == Vector2.INF:
 		AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "cells.txt 中没有区域 %s" % local_region)

@@ -45,7 +45,7 @@ script = ExtResource("7_hpbar")
 
 [node name="UnitSelector" parent="." instance=ExtResource("6_sel")]
 
-[node name="GameDirector" type="Node" parent="." unique_id=528822564]
+[node name="GameDirector" type="Node" parent="." unique_id=528822564 node_paths=PackedStringArray("health_bar_manager")]
 script = ExtResource("3_director")
 health_bar_manager = NodePath("../HealthBarManager")
 
