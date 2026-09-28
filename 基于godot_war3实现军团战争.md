@@ -88,7 +88,7 @@ legion_main.tscn → LegionMatchMode（独立节点，@export 注入依赖）
 - 已做：军团脚本共用 `tools/map-parse/src/legion-paths.js`，不再写死本机路径；`LEGION_PARSED_DIR` 可覆盖已解析目录。
 - 已做：只解析军团图用 `node tools/map-parse/src/parse-loose.js <解包目录>`（本机是 `D:\game2\rpg\mpqediten64\Work`），输出 `assets/map-parsed/legiontd`。`bootstrap.config.json` 也有 `LegionTD` 条目（读 `LEGION_LOOSE_DIR`），但 bootstrap 默认结束时删除 `assets/.staging`；已经解好魔兽资源时不要跑完整 bootstrap，要跑就加 `--keep-staging`。
 - 已做：地形贴图 `cd tools/asset-convert && npm run convert:legion-td`，从 `assets/.staging/wc3-assets` 转 `TerrainArt/**`（Cityscape、Outland 等）、悬崖贴图与模型（`Doodads/Terrain/CityCliffs`、`Cliffs`）、水和 Cityscape / Outland 装饰物。不转时地表缺图、悬崖缺网格。悬崖只读 `.gltf/.glb`，不依赖 `.scn` 烘焙；烘焙找 Godot 的顺序是 `GODOT` / `GODOT_BIN` 环境变量 → `bootstrap.config.json` 的 `godot.path` → 常见安装位置。
-- 未做：军团模型进 mod overlay，放到阶段 2 之前。
+- 已做：军团单位模型 `cd tools/asset-convert && npm run convert:legion-units -- <解包目录>`。先跑 `tools/map-parse/src/export-legion-slk.js` 把地图 `units/*.slk` 与 `units/*.txt` 导成 `map-parsed/legiontd/slk/Units/*.json` 和 `legion_models.json`（每个军团 id 用哪个模型、哪个图标），再把地图 `cdmod/` 等目录里的模型和图标转进 `asset-converted`；模型引用的原版贴图从 `assets/.staging` 取。与原版同路径的文件默认跳过（`--override-vanilla` 才覆盖）。没走 mod overlay：地图模型要引用原版贴图，放同一棵树最省事。
 
 验收只看游戏窗口：底栏数字、命令格、场上模型和血条。
 
@@ -273,7 +273,7 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 ### 8.3 模型与底栏
 
-模型经 `tools/asset-convert` 把 MDX 烤成 `.scn`。先转 `units.txt`、`hires.txt` 和 `waves.txt` 的 `model_id` 里出现的单位。这些模型在地图 MPQ（`Work/`）里，不在魔兽原版资源里，走 mod overlay（第 2.1 节）。底栏继续用 `GameHud` 和 `CommandCard`。收入、当前波次和回合倒计时加在现有资源条旁，由 `PlayerStock` 和 `LegionRoundClock` 驱动。
+模型经 `tools/asset-convert` 把 MDX 烤成 `.scn`。先转 `units.txt`、`hires.txt` 和 `waves.txt` 的 `model_id` 里出现的单位。这些模型在地图 MPQ（`Work/`）里，不在魔兽原版资源里，由 `convert:legion-units` 转进 `asset-converted`（第 2.1 节）。底栏继续用 `GameHud` 和 `CommandCard`。收入、当前波次和回合倒计时加在现有资源条旁，由 `PlayerStock` 和 `LegionRoundClock` 驱动。
 
 弹道和飘字由 `DamagePipeline.damage_applied` 和 `ProjectileService` 播放，和人族对战同一条线。
 
@@ -339,6 +339,26 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 1v1。命令格提供「造当前兵」「强化国王生命」「出售」。造兵在格子上立刻出现模型，并扣 `PlayerStock`。军团单位属性由 `Wc3DefStore` 叠加行提供。阵营表注入 `CombatQuery`。系统怪从出怪点走到漏怪点，再走到国王面前。国王血条就是该单位的生命。
 
 **验收：** 在窗口里造一个兵、点一次国王、卖掉刚造的兵，底栏金币和国王血条与这三次操作一致。怪能走到国王附近。GM 面板显示系统怪 owner 是对方电脑席。
+
+已接好：
+
+- `Wc3DefStore` 叠加层（`apply_overlay_dir` / `apply_overlay_records` / `clear_overlay`）。`LegionUnitDefs`（Data）读 `units.txt`、`waves.txt`、`king.txt` 和 `legion_models.json`，把地图 SLK 和按策划案算出的行（生命、攻击骰子、冷却、射程、攻防类型、造价、人口）叠上去；模式退出时清掉。
+- `CombatDamageTable` 换成本局伤害表；`CombatQuery.set_owner_sides` 注入 `LegionSeats.side_table()`。
+- `LegionBoard`（Logic）管格子占用、投入金币和卖价（建造回合内全额，之后 50%）；`LegionKing` 管国王与「强化国王生命」（扣木、`UnitLife.raise_max_life`、加收入）；`LegionEconomy` 记收入。
+- `LegionSpawner` 按 `waves.txt` 在每个启用玩家的出怪点刷怪，owner 为对方电脑席，先走到漏怪点再走到国王前 160。
+- `LegionCommandCard`：选中空或国王时是造兵格（Q W E R A S D F）+ 强化国王（K），落格时 Esc 取消；选中自己的兵是出售（X）。没转出图标的按钮显示文字。
+- `GameDirector`：`MatchMode.command_card` / `handle_command_action` / `blocks_unit_orders` 钩子，`spawn_mode_unit` / `remove_mode_unit`。
+- GM 面板「军团阶段 2」：刷第 N 波、清怪、加金 / 加木，显示选中单位的 typeId、owner、阵营、是否对方电脑席、生命，国王两侧血量与强化次数、收入、场上怪数。
+
+阶段 2 不打架：兵、国王、怪都是被动 AI，怪用移动命令，国王血量只随强化变化。回合固定为 1（卖兵全额退），农场、雇佣兵未接，放到阶段 3、4。
+
+验收步骤：
+
+1. `cd tools/asset-convert && npm run convert:legion-units -- D:\game2\rpg\mpqediten64\Work`。看报告里没匹配上模型的 id 和国王候选；要改匹配就写 `legion_data/models.txt`（`id,template` 每行一条），重跑。
+2. 编辑器打开项目一次，注册新 `class_name`：`LegionUnitDefs`、`LegionBoard`、`LegionKing`、`LegionEconomy`、`LegionSpawner`、`LegionCommandCard`。
+3. F6 `legion_main`：Q 选第一个兵，左键点本方格子落兵（Shift 连放），金币扣掉造价；K 强化国王，木头扣、国王血上限加；选中刚造的兵按 X，金币全额退回。
+4. GM「军团阶段 2」刷第 1 波：怪走到国王前；选中一只怪，owner 为 9（R 阵营电脑席，对方）。
+5. F6 `game_main`：仍是 Echo Isles 500 / 150。
 
 ### 阶段 3 · 回合循环与战斗
 
@@ -467,8 +487,8 @@ Work/godot_war3/
   game/scripts/modes/legion/       军团对局模式，按第 3 节分层
   legion_ui/legion_boot.gd         跳到 legion_main
   legion_data/                     规则表、格子、席位
-  mods/legiontd/                   地图 MPQ 资源 overlay（不入库，bootstrap 生成）
-  assets/map-parsed/legiontd/      地形、路径、区域、开始点（不入库，bootstrap 生成）
+  assets/map-parsed/legiontd/      地形、路径、区域、开始点、slk/、legion_models.json（不入库）
+  assets/asset-converted/          地图 MPQ 模型与图标由 convert:legion-units 转入（不入库）
 ```
 
 阶段 0 只加场景、跳过 Melee、设 `PlayerStock`。属性叠加、阵营、伤害表从阶段 2 起接，回合循环从阶段 3 起接。
