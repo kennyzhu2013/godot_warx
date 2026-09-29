@@ -40,6 +40,8 @@ class Pending:
 
 
 var attack_move: bool = false
+## ≥ 0 时只在这个席位的路刷怪（GM 测试用）；-1 = 所有启用玩家路
+var only_lane_seat: int = -1
 ## side -> 国王单位（模式注入，攻击国王用）
 var king_of_side: Callable = Callable()
 var _director: GameDirector = null
@@ -64,6 +66,8 @@ func spawn_wave(row: LegionUnitDefs.WaveRow) -> int:
 	var gap := maxf(row.interval / row.count, MIN_GAP_SEC)
 	for lane in _seats.enabled_seats():
 		if not lane.has_region() or lane.spawn == Vector2.INF:
+			continue
+		if only_lane_seat >= 0 and lane.seat != only_lane_seat:
 			continue
 		var owner := _seats.computer_seat_of(LegionSeats.opposite(lane.side))
 		for i in range(row.count):

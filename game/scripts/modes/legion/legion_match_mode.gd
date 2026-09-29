@@ -128,8 +128,10 @@ func _focus_home() -> void:
 	_focus_wc3(center)
 
 
-func _focus_king() -> void:
-	var king := _seats.king_of(_local_side()) if _seats != null else Vector2.INF
+func _focus_king(side: String = "") -> void:
+	if side.is_empty():
+		side = _local_side()
+	var king := _seats.king_of(side) if _seats != null else Vector2.INF
 	if king != Vector2.INF:
 		_focus_wc3(king)
 
@@ -605,6 +607,20 @@ func _build_gm_round_section(gm: GmDebugPanel) -> void:
 	_add_button(res_row, "+100 木", func() -> void: _gm_add(0, 100))
 	_add_button(res_row, "镜头回本方", _focus_home)
 	_add_button(res_row, "镜头到国王", _focus_king)
+	_add_button(res_row, "镜头到对面国王", func() -> void: _focus_king(LegionSeats.opposite(_local_side())))
+	var test_row := HBoxContainer.new()
+	test_row.add_theme_constant_override("separation", 6)
+	box.add_child(test_row)
+	var lane_check := CheckBox.new()
+	lane_check.text = "只刷本方路"
+	lane_check.tooltip_text = "对面路不出怪，对面国王不挨打，对局不会因它阵亡提前结束（下一波起生效）"
+	lane_check.toggled.connect(func(on: bool) -> void:
+		if _spawner != null:
+			_spawner.only_lane_seat = local_seat if on else -1
+	)
+	test_row.add_child(lane_check)
+	_add_button(test_row, "击杀一个本方兵", _on_gm_kill_defender)
+	_add_button(test_row, "国王回满血", _on_gm_heal_kings)
 	_gm_info = Label.new()
 	_gm_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_gm_info.custom_minimum_size = Vector2(280, 0)
@@ -618,6 +634,33 @@ func _add_button(parent: Control, text: String, cb: Callable) -> void:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.pressed.connect(cb)
 	parent.add_child(b)
+
+
+## 选中的是本方防守兵就杀它，否则杀名册里第一个活着的本方兵；结算时应在原格重新摆出。
+func _on_gm_kill_defender() -> void:
+	if _board == null or director == null:
+		return
+	var target: Node3D = null
+	var sel: Node3D = _primary if is_instance_valid(_primary) else null
+	if LegionBoard.is_defender(sel) and LegionBoard.seat_of(sel) == local_seat and CombatQuery.is_alive_in_world(sel):
+		target = sel
+	else:
+		for d in _board.records():
+			if d.seat == local_seat and d.is_alive():
+				target = d.unit_node()
+				break
+	if target == null:
+		_set_status("没有活着的本方防守兵")
+		return
+	var name_s := _unit_name(target)
+	director.kill_mode_unit(target)
+	_set_status("GM 击杀 %s：结算时应在原格重新摆出，人口不变" % name_s)
+
+
+func _on_gm_heal_kings() -> void:
+	for k in _king.all_kings():
+		if CombatQuery.is_alive_in_world(k):
+			UnitLife.set_life(k, UnitLife.get_max_life(k))
 
 
 ## 跳到第 N 波准备：清场上系统怪、防守兵复位，不发收入。

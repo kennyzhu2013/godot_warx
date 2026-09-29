@@ -286,6 +286,11 @@ func remove_mode_unit(unit: Node3D) -> void:
 		health_bar_manager.resync()
 
 
+## 对局模式（GM）直接杀死一个单位：走 DeathService，和战死同一条线（死亡动画、退人口、尸体移除）。
+func kill_mode_unit(unit: Node3D) -> void:
+	_kill_unit(unit)
+
+
 ## 对局模式把活着的单位拉回某点（军团结算复位）：停攻击与导航，贴地瞬移。
 func reset_mode_unit(unit: Node3D, wc3_xy: Vector2) -> void:
 	if unit == null or not is_instance_valid(unit):
