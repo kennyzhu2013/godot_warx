@@ -354,7 +354,7 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 验收步骤：
 
-1. `cd tools/asset-convert && npm run convert:legion-units -- D:\game2\rpg\mpqediten64\Work`。看报告里没匹配上模型的 id 和国王候选；要改匹配就写 `legion_data/models.txt`（`id,template` 每行一条），重跑。
+1. `cd tools/asset-convert && npm run convert:legion-units -- D:\game2\rpg\mpqediten64\Work`。看报告里没匹配上模型的 id 和国王候选；要改匹配就改 `legion_data/models.txt`（首行表头 `id,template`，下面每行一条），重跑。本机结果：地图的 `unitui.slk` 是 Excel 写法（`F;Y;X` 定位、下一行 `C;K` 写值），`parse-slk.js` 已支持，`unitUI.json` 2708 行；13 个建造单位按地图 id 配上，只剩 farm1–3 无模板；国王取 `h00K`（`war3mapImported\King.mdl`）；从地图转出 5 个模型、4 个图标，烘焙 exported=5（`export_model_scenes.gd` 的 `--include` 去掉 `.mdx` 扩展名再比）。
 2. 编辑器打开项目一次，注册新 `class_name`：`LegionUnitDefs`、`LegionBoard`、`LegionKing`、`LegionEconomy`、`LegionSpawner`、`LegionCommandCard`。
 3. F6 `legion_main`：Q 选第一个兵，左键点本方格子落兵（Shift 连放），金币扣掉造价；K 强化国王，木头扣、国王血上限加；选中刚造的兵按 X，金币全额退回。
 4. GM「军团阶段 2」刷第 1 波：怪走到国王前；选中一只怪，owner 为 9（R 阵营电脑席，对方）。

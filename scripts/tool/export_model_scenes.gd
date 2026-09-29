@@ -258,11 +258,20 @@ func _plog(level: String, message: String, detail: String = "") -> void:
 	f.close()
 
 
+## include 可能是源文件路径（*.mdx / *.mdl），磁盘上是同路径 *.gltf：去掉扩展名再比。
 func _matches_any_include(logical_glb: String, includes: PackedStringArray) -> bool:
 	for inc in includes:
-		if logical_glb.findn(str(inc)) >= 0:
+		if logical_glb.findn(_strip_model_ext(str(inc))) >= 0:
 			return true
 	return false
+
+
+func _strip_model_ext(pattern: String) -> String:
+	var lower := pattern.to_lower()
+	for ext in [".mdx", ".mdl", ".gltf", ".glb"]:
+		if lower.ends_with(ext):
+			return pattern.substr(0, pattern.length() - ext.length())
+	return pattern
 
 
 ## C-2: 读 .attachments.json sidecar（路径同 .gltf）。
