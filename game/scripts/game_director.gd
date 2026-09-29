@@ -286,6 +286,19 @@ func remove_mode_unit(unit: Node3D) -> void:
 		health_bar_manager.resync()
 
 
+## 对局模式把活着的单位拉回某点（军团结算复位）：停攻击与导航，贴地瞬移。
+func reset_mode_unit(unit: Node3D, wc3_xy: Vector2) -> void:
+	if unit == null or not is_instance_valid(unit):
+		return
+	var ac := unit.get_node_or_null("AttackController") as AttackController
+	if ac != null:
+		ac.cancel()
+	var nav := unit.get_node_or_null("UnitNavigator") as UnitNavigator
+	if nav != null:
+		nav.stop()
+	_teleport_unit_wc3(unit, wc3_xy)
+
+
 ## 按当前选中重建肖像与命令格（对局模式改了库存或单位后调用）。
 func refresh_selection_hud() -> void:
 	if unit_selector == null:
