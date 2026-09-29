@@ -114,9 +114,19 @@ func _focus_home() -> void:
 	if center == Vector2.INF:
 		AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "席位 %d 的区域 %s 不在 cells.txt" % [local_seat, region])
 		return
+	_focus_wc3(center)
+
+
+func _focus_king() -> void:
+	var king := _seats.king_of(_local_side()) if _seats != null else Vector2.INF
+	if king != Vector2.INF:
+		_focus_wc3(king)
+
+
+func _focus_wc3(wc3: Vector2) -> void:
 	if rts_camera == null:
 		return
-	var world := Wc3Coords.wc3_xy_to_godot(center.x, center.y)
+	var world := Wc3Coords.wc3_xy_to_godot(wc3.x, wc3.y)
 	rts_camera.snap_to(world)
 	rts_camera.focus_on_position(world, 0.35)
 
@@ -418,6 +428,7 @@ func _build_gm_stage2_section(gm: GmDebugPanel) -> void:
 	_add_button(res_row, "+100 金", func() -> void: _gm_add(100, 0))
 	_add_button(res_row, "+100 木", func() -> void: _gm_add(0, 100))
 	_add_button(res_row, "镜头回本方", _focus_home)
+	_add_button(res_row, "镜头到国王", _focus_king)
 	_gm_info = Label.new()
 	_gm_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_gm_info.custom_minimum_size = Vector2(280, 0)
@@ -479,9 +490,16 @@ func _refresh_gm_info() -> void:
 				"国王 %s：%d/%d（强化 %d 次）"
 				% [side, roundi(UnitLife.get_life(k)), roundi(UnitLife.get_max_life(k)), _king.hp_level(side)]
 			)
-	lines.append("本席 %d 收入 %d · 场上系统怪 %d" % [
-		local_seat, _economy.income_of(local_seat), _spawner.creeps().size() if _spawner != null else 0,
-	])
+	lines.append("本席 %d 收入 %d" % [local_seat, _economy.income_of(local_seat)])
+	if _spawner != null:
+		var sm := _spawner.summary()
+		lines.append(
+			"系统怪：排队 %d · 去漏怪点 %d · 去国王 %d · 已站定 %d（离国王最远 %d）"
+			% [sm.pending, sm.to_leak, sm.to_king, sm.done, roundi(sm.done_max_king_dist)]
+		)
+		var owners: Dictionary = sm.owners
+		for owner_id in owners:
+			lines.append("  owner %d（%s）× %d" % [owner_id, _describe_owner(owner_id), owners[owner_id]])
 	_gm_info.text = "\n".join(lines)
 
 
@@ -489,13 +507,18 @@ func _describe_unit(unit: Node3D) -> String:
 	if unit == null:
 		return "无"
 	var owner := CombatQuery.owner_of(unit)
-	var side := CombatQuery.side_of_owner(owner)
-	var who := "对方" if not side.is_empty() and side != _local_side() else "本方"
-	var seat_kind := "电脑席" if _seats != null and _seats.get_seat(owner) != null and not _seats.get_seat(owner).has_region() else "玩家席"
-	return "%s %s · owner %d（%s 阵营%s，%s）· 生命 %d/%d" % [
-		CombatQuery.type_id_of(unit), _unit_name(unit), owner, side, seat_kind, who,
+	return "%s %s · owner %d（%s）· 生命 %d/%d" % [
+		CombatQuery.type_id_of(unit), _unit_name(unit), owner, _describe_owner(owner),
 		roundi(UnitLife.get_life(unit)), roundi(UnitLife.get_max_life(unit)),
 	]
+
+
+func _describe_owner(owner_id: int) -> String:
+	var side := CombatQuery.side_of_owner(owner_id)
+	var who := "对方" if not side.is_empty() and side != _local_side() else "本方"
+	var seat: LegionSeats.Seat = _seats.get_seat(owner_id) if _seats != null else null
+	var seat_kind := "电脑席" if seat != null and not seat.has_region() else "玩家席"
+	return "%s 阵营%s，%s" % [side, seat_kind, who]
 
 
 func _on_overlay_toggled(on: bool) -> void:
