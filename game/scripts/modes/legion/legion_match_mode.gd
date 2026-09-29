@@ -65,6 +65,9 @@ func begin(session: GameSession) -> void:
 	_reload_tables()
 	_board = LegionBoard.from_rows(_cells)
 	var region := _local_region()
+	# 这张图 war3map 的 cameraBounds 只包住中心一小块（约 ±2200），
+	# 八个建造区在界外。不放开的话 Home 会被夹在角上，到不了本方格子。
+	_expand_camera_bounds()
 	_focus_home()
 	_spawn_kings()
 	_spawner = LegionSpawner.new()
@@ -75,6 +78,34 @@ func begin(session: GameSession) -> void:
 	if director != null:
 		director.refresh_selection_hud()
 	_attach_gm_section()
+
+
+func _expand_camera_bounds() -> void:
+	if rts_camera == null:
+		return
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for row in _cells:
+		var p := Vector2(float(row.get("x", "0")), float(row.get("y", "0")))
+		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.y))
+		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.y))
+	if _seats != null:
+		for s in _seats.seats:
+			if s.king != Vector2.INF:
+				lo = Vector2(minf(lo.x, s.king.x), minf(lo.y, s.king.y))
+				hi = Vector2(maxf(hi.x, s.king.x), maxf(hi.y, s.king.y))
+	if lo.x == INF:
+		return
+	var margin := 1600.0
+	lo -= Vector2(margin, margin)
+	hi += Vector2(margin, margin)
+	var scale := Wc3Coords.WORLD_SCALE
+	var min_xz := Vector2(lo.x * scale, -hi.y * scale)
+	var max_xz := Vector2(hi.x * scale, -lo.y * scale)
+	rts_camera.set_boundaries(
+		Vector2(minf(min_xz.x, max_xz.x), minf(min_xz.y, max_xz.y)),
+		Vector2(maxf(min_xz.x, max_xz.x), maxf(min_xz.y, max_xz.y))
+	)
 
 
 func _focus_home() -> void:
