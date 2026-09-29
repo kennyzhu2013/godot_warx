@@ -265,8 +265,10 @@ func _balance_record(store: Node, s: Spec, tpl: String) -> Dictionary:
 	rec["def"] = 0
 	rec["realdef"] = 0
 	rec["defType"] = s.armor_type
-	rec["regenHP"] = s.regen
-	rec["regenType"] = "always" if s.regen > 0.0 else "none"
+	# 国王回复只在战斗阶段由模式每秒加（第 5 节），不走 UnitRegen 的常驻回血
+	var auto_regen := s.regen if s.kind != "king" else 0.0
+	rec["regenHP"] = auto_regen
+	rec["regenType"] = "always" if auto_regen > 0.0 else "none"
 	rec["isbldg"] = 0
 	# 模板若是英雄，去掉主属性，免得按英雄算生命 / 显示英雄面板
 	rec["Primary"] = "_"

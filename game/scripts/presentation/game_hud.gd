@@ -67,6 +67,7 @@ const _TRAIN_MAX_SLOTS := 7
 var _train_slot_sig: String = ""
 ## portrait_bar_mode：none / hero_xp / timed_life（与 SelectionInfoBuilder 一致）
 var _portrait_bar_mode: String = "none"
+var _mode_info: Label = null
 const _HERO_LEVEL_BORDER := "UI/Buttons/HeroLevel/HeroLevel-Border.png"
 
 
@@ -817,6 +818,22 @@ func set_status(text: String) -> void:
 	if _status:
 		_status.text = text
 		_status.visible = show_dev_hint and not text.is_empty()
+
+
+## 对局模式的顶栏附加信息（回合、倒计时、收入等），接在金 / 木 / 人口之后；空串隐藏。
+func set_mode_info(text: String) -> void:
+	if _mode_info == null:
+		if text.is_empty() or _food_label == null:
+			return
+		var row := _food_label.get_parent().get_parent() as Control
+		if row == null:
+			return
+		_mode_info = Label.new()
+		_mode_info.name = "ModeInfo"
+		_mode_info.add_theme_color_override("font_color", _food_label.get_theme_color("font_color"))
+		row.add_child(_mode_info)
+	_mode_info.text = text
+	_mode_info.visible = not text.is_empty()
 
 
 ## 命令面板上方飘字（资源不够等）；DEBUG 状态栏同步。
