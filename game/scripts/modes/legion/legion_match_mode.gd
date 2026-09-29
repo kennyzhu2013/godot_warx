@@ -65,13 +65,7 @@ func begin(session: GameSession) -> void:
 	_reload_tables()
 	_board = LegionBoard.from_rows(_cells)
 	var region := _local_region()
-	var center := LegionTables.region_center(_cells, region)
-	if center == Vector2.INF:
-		AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "席位 %d 的区域 %s 不在 cells.txt" % [local_seat, region])
-	elif rts_camera != null:
-		var world := Wc3Coords.wc3_xy_to_godot(center.x, center.y)
-		rts_camera.snap_to(world)
-		rts_camera.focus_on_position(world, 0.35)
+	_focus_home()
 	_spawn_kings()
 	_spawner = LegionSpawner.new()
 	_spawner.name = "LegionSpawner"
@@ -81,6 +75,19 @@ func begin(session: GameSession) -> void:
 	if director != null:
 		director.refresh_selection_hud()
 	_attach_gm_section()
+
+
+func _focus_home() -> void:
+	var region := _local_region()
+	var center := LegionTables.region_center(_cells, region)
+	if center == Vector2.INF:
+		AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "席位 %d 的区域 %s 不在 cells.txt" % [local_seat, region])
+		return
+	if rts_camera == null:
+		return
+	var world := Wc3Coords.wc3_xy_to_godot(center.x, center.y)
+	rts_camera.snap_to(world)
+	rts_camera.focus_on_position(world, 0.35)
 
 
 func _exit_tree() -> void:
@@ -212,7 +219,7 @@ func _try_place(wc3: Vector2, keep_placing: bool) -> void:
 		return
 	var cell := _board.cell_near(_local_region(), wc3)
 	if cell == null:
-		_set_status("只能造在本方建造区（%s）的格子上" % _local_region())
+		_set_status("只能造在本方建造区（%s）的格子上；Home 镜头回本方" % _local_region())
 		return
 	if not cell.buildable:
 		_set_status("这一格不可造")
@@ -379,6 +386,7 @@ func _build_gm_stage2_section(gm: GmDebugPanel) -> void:
 	box.add_child(res_row)
 	_add_button(res_row, "+100 金", func() -> void: _gm_add(100, 0))
 	_add_button(res_row, "+100 木", func() -> void: _gm_add(0, 100))
+	_add_button(res_row, "镜头回本方", _focus_home)
 	_gm_info = Label.new()
 	_gm_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_gm_info.custom_minimum_size = Vector2(280, 0)
@@ -504,6 +512,11 @@ func _input(event: InputEvent) -> void:
 	# 地面左键必须走 _input：UnitSelector 在 _input 里会把左键标成已处理，_unhandled_input 收不到。
 	# 本节点在场景树末尾，_input 先于选择器。
 	if director == null:
+		return
+	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_HOME:
+		_focus_home()
+		get_viewport().set_input_as_handled()
 		return
 	if not _placing_id.is_empty():
 		_input_placing(event)
