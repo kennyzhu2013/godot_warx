@@ -1,0 +1,5 @@
+# 手工指定军团 id 借哪个单位的外观（模型、图标）；优先于地图同 id / 同名匹配和各表的 model_id。
+# 第一行非注释行是表头，不能省。改完重跑 npm run convert:legion-units。
+# lkng：地图里名为「国王」的 h00K / h06H / h0D8 都用 war3mapImported\King.mdl，取 h00K。
+id,template
+lkng,h00K

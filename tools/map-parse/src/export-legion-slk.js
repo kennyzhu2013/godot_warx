@@ -125,6 +125,16 @@ function iniGet(sec, key) {
   return "";
 }
 
+function legionHeader(file) {
+  const p = path.join(LEGION_DATA_DIR, file);
+  if (!fs.existsSync(p)) return [];
+  for (const raw of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line && !line.startsWith("#")) return line.split(",").map((c) => c.trim());
+  }
+  return [];
+}
+
 function readLegionRows(file) {
   const p = path.join(LEGION_DATA_DIR, file);
   if (!fs.existsSync(p)) return [];
@@ -202,7 +212,12 @@ function main() {
     if (name) mapNames.set(id, name);
   }
 
-  const manual = new Map(readLegionRows("models.txt").map((r) => [r.id, r.template]));
+  const manualRows = readLegionRows("models.txt");
+  const manualHeader = manualRows.length ? Object.keys(manualRows[0]) : legionHeader("models.txt");
+  if (manualHeader.length && !manualHeader.includes("template")) {
+    console.warn("WARN legion_data/models.txt 第一行非注释行必须是表头 id,template，本次忽略该表");
+  }
+  const manual = new Map(manualRows.filter((r) => "template" in r).map((r) => [r.id, r.template]));
   const nameIndex = new Map();
   for (const [id, n] of mapNames) if (!nameIndex.has(n)) nameIndex.set(n, id);
 
