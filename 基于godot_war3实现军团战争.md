@@ -356,8 +356,10 @@ seat,side,region,enabled,spawn_x,spawn_y,leak_x,leak_y,king_x,king_y
 
 1. `cd tools/asset-convert && npm run convert:legion-units -- D:\game2\rpg\mpqediten64\Work`。看报告里没匹配上模型的 id 和国王候选；要改匹配就改 `legion_data/models.txt`（首行表头 `id,template`，下面每行一条），重跑。本机结果：地图的 `unitui.slk` 是 Excel 写法（`F;Y;X` 定位、下一行 `C;K` 写值），`parse-slk.js` 已支持，`unitUI.json` 2708 行；13 个建造单位按地图 id 配上，只剩 farm1–3 无模板；国王取 `h00K`（`war3mapImported\King.mdl`）；从地图转出 5 个模型、4 个图标，烘焙 exported=5（`export_model_scenes.gd` 的 `--include` 去掉 `.mdx` 扩展名再比）。
 2. 编辑器打开项目一次，注册新 `class_name`：`LegionUnitDefs`、`LegionBoard`、`LegionKing`、`LegionEconomy`、`LegionSpawner`、`LegionCommandCard`。
-3. F6 `legion_main`：Q 选第一个兵，左键点本方格子落兵（Shift 连放），金币扣掉造价；K 强化国王，木头扣、国王血上限加；选中刚造的兵按 X，金币全额退回。
-4. GM「军团阶段 2」刷第 1 波：怪走到国王前；选中一只怪，owner 为 9（R 阵营电脑席，对方）。
+3. F6 `legion_main`：镜头跑远了按 Home（或 GM「镜头回本方」）回到本方区域。Q 选第一个兵，左键点本方格子落兵（Shift 连放），金币扣掉造价；K 强化国王，木头扣、国王血上限加；选中刚造的兵按 X，金币全额退回。
+4. GM「军团阶段 2」刷第 1 波：不用点中怪，GM 读数里有系统怪各段只数和按 owner 的分组。1v1 应是 owner 9（R 阵营电脑席，对方）× 6，走本方路打 L 国王；owner 8（L 阵营电脑席，本方）× 6，走对面路打 R 国王。等「已站定」到 12，「离国王最远」应在 160 + 到点半径 96 左右以内；「镜头到国王」看它们停在国王前。
+
+验收记录（2026-09-29 窗口）：造豺狼蛮人 300 → 290 金、人口 1/7；K 后木 114 → 34，国王 L 2080/2080、R 仍 2000/2000，收入 8；出售回到 300 金、0/7；第 1 波排队 12 只，场上 12 只往路上走；`game_main` 500 / 150。未读到：怪的 owner、怪在国王前站定，用上面的 GM 读数补。
 5. F6 `game_main`：仍是 Echo Isles 500 / 150。
 
 ### 阶段 3 · 回合循环与战斗
