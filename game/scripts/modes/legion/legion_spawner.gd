@@ -81,6 +81,32 @@ func creeps() -> Array[Node3D]:
 	return out
 
 
+## GM 读数：各段只数、按 owner 计数、已站定的怪离本路国王最远多少（wc3 单位）。
+func summary() -> Dictionary:
+	var legs: Dictionary[int, int] = {Leg.TO_LEAK: 0, Leg.TO_KING: 0, Leg.DONE: 0}
+	var owners: Dictionary[int, int] = {}
+	var done_max_king_dist := 0.0
+	for c in _creeps:
+		if not is_instance_valid(c.unit):
+			continue
+		legs[c.leg] += 1
+		var owner_id := CombatQuery.owner_of(c.unit)
+		owners[owner_id] = owners.get(owner_id, 0) + 1
+		if c.leg == Leg.DONE and _seats != null:
+			var king := _seats.king_of(c.lane.side)
+			if king != Vector2.INF:
+				var pos := Wc3Coords.godot_to_wc3_xy(c.unit.global_position)
+				done_max_king_dist = maxf(done_max_king_dist, pos.distance_to(king))
+	return {
+		"pending": _pending.size(),
+		"to_leak": legs[Leg.TO_LEAK],
+		"to_king": legs[Leg.TO_KING],
+		"done": legs[Leg.DONE],
+		"owners": owners,
+		"done_max_king_dist": done_max_king_dist,
+	}
+
+
 ## 撤掉场上与排队中的全部系统怪。
 func clear() -> void:
 	_pending.clear()
