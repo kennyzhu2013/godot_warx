@@ -5,6 +5,7 @@
  *   ID;...     header
  *   B;Xcols;Yrows;D0   dimensions (optional)
  *   C;Xcol;Yrow;Kvalue cell (X/Y may be omitted → sticky / next column)
+ *   F;...;Yrow;Xcol    format record; X/Y move the cursor (Excel output)
  *   E           end
  *
  * @see https://github.com/stijnherfst/HiveWE/wiki/SLK
@@ -86,6 +87,7 @@ export function parseSlk(input) {
 
   let curX = 0;
   let curY = 1;
+  let cursorFromFormat = false;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -106,7 +108,7 @@ export function parseSlk(input) {
       continue;
     }
 
-    if (type !== "C") continue;
+    if (type !== "C" && type !== "F") continue;
 
     let x;
     let y;
@@ -120,9 +122,18 @@ export function parseSlk(input) {
       else if (code === "K") kRaw = f.slice(1);
     }
 
+    if (type === "F") {
+      // Excel writes `F;Y;X` to move the cursor, then a bare `C;K` for that cell.
+      if (y !== undefined) curY = y;
+      if (x !== undefined) curX = x;
+      if (x !== undefined || y !== undefined) cursorFromFormat = true;
+      continue;
+    }
+
     if (y !== undefined) curY = y;
     if (x !== undefined) curX = x;
-    else curX += 1;
+    else if (!cursorFromFormat) curX += 1;
+    cursorFromFormat = false;
 
     if (kRaw === undefined) continue;
 
