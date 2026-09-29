@@ -5,6 +5,8 @@ extends MatchMode
 ## 阶段 0：军团开局库存 + 镜头对准本方建造区。
 ## 阶段 1：seats.txt 席位表；GM 面板「军团标定」页（叠层、点选坐标、连通检查、重载表）。
 ## 阶段 2：单位叠加行 + 本局伤害表 + 阵营表；命令格造兵 / 强化国王生命 / 出售；两座国王；系统怪走到国王面前。
+## 阶段 3：LegionRoundClock 准备 → 战斗 → 结算；怪攻击移动，防守兵在战斗阶段自动索敌（拴在格子上），
+## 结算发收入、防守兵回格回满血、战死的重新摆出；国王原地攻击，战斗中每秒回复。
 ## 方案与自定规格：基于godot_war3实现军团战争.md。
 
 ## 策划案 5.7
@@ -12,10 +14,10 @@ const START_GOLD := 300
 const START_LUMBER := 114
 ## 策划案写主城提供 7 人口
 const START_FOOD_CAP := 7
-## 阶段 2 还没有回合时钟，出售按「本回合」算
-const STAGE2_ROUND := 1
-## GM 信息刷新间隔（秒）
+## GM / 顶栏信息刷新间隔（秒）
 const GM_INFO_INTERVAL := 0.25
+## 自定规格：防守兵战斗中离自己格子超过这个距离就回格（CAMP_CREEP 拴绳）
+const DEFENDER_LEASH_WC3 := 600.0
 
 @export var rts_camera: RtsCamera
 @export var game_hud: GameHud
@@ -37,7 +39,9 @@ var _board: LegionBoard = null
 var _king: LegionKing = LegionKing.new()
 var _economy: LegionEconomy = LegionEconomy.new()
 var _spawner: LegionSpawner = null
-var _round: int = STAGE2_ROUND
+var _clock: LegionRoundClock = LegionRoundClock.new()
+## 上一次结算的结果，下一回合准备提示里一起显示
+var _settle_note: String = ""
 ## 正在放置的兵（命令格点了建造按钮后）；空 = 不在放置
 var _placing_id: String = ""
 var _primary: Node3D = null
@@ -74,10 +78,17 @@ func begin(session: GameSession) -> void:
 	_spawner.name = "LegionSpawner"
 	add_child(_spawner)
 	_spawner.configure(director, _seats)
+	_spawner.attack_move = true
+	_spawner.king_of_side = _king.king_of
+	var king_spec := _defs.get_spec(LegionUnitDefs.KING_ID)
+	_king.regen_per_sec = king_spec.regen if king_spec != null else 0.0
+	_clock.last_round = mini(LegionRoundClock.TEST_WAVES, maxi(_defs.waves.size(), 1))
+	_clock.phase_changed.connect(_on_phase_changed)
 	_set_status("军团战争 · %s · 左键命令格造兵，K 强化国王" % region)
 	if director != null:
 		director.refresh_selection_hud()
 	_attach_gm_section()
+	_clock.start(1)
 
 
 func _expand_camera_bounds() -> void:
@@ -211,6 +222,10 @@ func _spawn_kings() -> void:
 			AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "国王摆放失败：%s 阵营 @ %s" % [s.side, s.king])
 			continue
 		_make_passive(unit)
+		# 国王不移动，只打射程内的怪
+		var router := director.get_command_router()
+		if router != null:
+			router.issue_hold([unit], UnitOrder.Source.UNKNOWN)
 		_king.set_king(s.side, unit)
 
 
@@ -239,6 +254,9 @@ func _begin_placing(unit_id: String) -> void:
 	var s := _defs.get_spec(unit_id)
 	if s == null:
 		return
+	if _clock.phase != LegionRoundClock.Phase.PREP:
+		_set_status("只能在准备阶段造兵（现在是%s）" % _clock.phase_name())
+		return
 	_placing_id = unit_id
 	_set_status("放置 %s（%d 金）：左键点本方建造格；右键 / Esc 取消" % [s.name, s.gold])
 	director.refresh_selection_hud()
@@ -258,6 +276,9 @@ func _try_place(wc3: Vector2, keep_placing: bool) -> void:
 	if s == null or stock == null or _board == null:
 		_cancel_placing()
 		return
+	if _clock.phase != LegionRoundClock.Phase.PREP:
+		_cancel_placing("只能在准备阶段造兵（现在是%s）" % _clock.phase_name())
+		return
 	var cell := _board.cell_near(_local_region(), wc3)
 	if cell == null:
 		_set_status("只能造在本方建造区（%s）的格子上；Home 镜头回本方" % _local_region())
@@ -274,12 +295,7 @@ func _try_place(wc3: Vector2, keep_placing: bool) -> void:
 	if not stock.try_spend(s.gold, s.wood):
 		_set_status("金币不足（需要 %d）" % s.gold)
 		return
-	var lane := _local_seat_row()
-	var face := deg_to_rad(90.0)
-	if lane != null and lane.spawn != Vector2.INF and lane.leak != Vector2.INF:
-		var d := lane.spawn - lane.leak
-		face = atan2(d.y, d.x)
-	var unit := director.spawn_mode_unit(s.id, cell.center, local_seat, face)
+	var unit := director.spawn_mode_unit(s.id, cell.center, local_seat, _defender_facing(local_seat))
 	if unit == null:
 		stock.add_gold(s.gold)
 		stock.add_lumber(s.wood)
@@ -287,7 +303,7 @@ func _try_place(wc3: Vector2, keep_placing: bool) -> void:
 		return
 	stock.add_food_used(s.food)
 	_make_passive(unit)
-	_board.place(unit, cell, local_seat, _round, s.gold)
+	_board.place(unit, cell, local_seat, _clock.round_no, s.gold, s.food)
 	if not keep_placing:
 		_placing_id = ""
 	_set_status(
@@ -302,8 +318,11 @@ func _sell_primary() -> void:
 	if not LegionBoard.is_defender(unit) or LegionBoard.seat_of(unit) != local_seat:
 		_set_status("只能出售本方防守兵")
 		return
+	if _clock.phase != LegionRoundClock.Phase.PREP:
+		_set_status("只能在准备阶段出售（现在是%s）" % _clock.phase_name())
+		return
 	var stock := _local_stock()
-	var refund := LegionBoard.sell_refund(unit, _round)
+	var refund := LegionBoard.sell_refund(unit, _clock.round_no)
 	var name_s := _unit_name(unit)
 	_board.release(unit)
 	_primary = null
@@ -317,11 +336,157 @@ func _sell_primary() -> void:
 	director.refresh_selection_hud()
 
 
-## 阶段 2 不打：防守兵与国王不索敌、不反击（阶段 3 由回合时钟切换）。
+## 准备阶段的防守兵与国王：不索敌、不反击。
 func _make_passive(unit: Node3D) -> void:
 	var ai := UnitAI.of(unit)
 	if ai != null:
 		ai.set_profile(UnitAI.Profile.PASSIVE)
+		ai.yield_to_player()
+
+
+func _defender_facing(seat: int) -> float:
+	var lane: LegionSeats.Seat = _seats.get_seat(seat) if _seats != null else null
+	if lane != null and lane.spawn != Vector2.INF and lane.leak != Vector2.INF:
+		var d := lane.spawn - lane.leak
+		return atan2(d.y, d.x)
+	return deg_to_rad(90.0)
+
+
+# —— 回合 ——
+
+func _on_phase_changed(phase: int, round_no: int) -> void:
+	match phase:
+		LegionRoundClock.Phase.PREP:
+			_set_defenders_fighting(false)
+			var prep := "第 %d 波准备：%d 秒后开战，可造兵 / 出售 / 强化国王" % [round_no, roundi(_clock.time_left)]
+			_set_status(prep if _settle_note.is_empty() else "%s ｜ %s" % [_settle_note, prep])
+			_settle_note = ""
+		LegionRoundClock.Phase.BATTLE:
+			_cancel_placing("")
+			_set_defenders_fighting(true)
+			_king.reset_regen_clock()
+			var queued := _spawn_round_wave(round_no)
+			_set_status("第 %d 波开战：系统怪 %d 只" % [round_no, queued])
+		LegionRoundClock.Phase.SETTLE:
+			_settle_round(round_no)
+		LegionRoundClock.Phase.OVER:
+			if _spawner != null:
+				_spawner.clear()
+			_set_defenders_fighting(false)
+			_set_status("对局结束：%s" % _clock.over_reason)
+	if director != null:
+		director.refresh_selection_hud()
+	_refresh_mode_info()
+
+
+func _spawn_round_wave(round_no: int) -> int:
+	if _spawner == null or _defs == null:
+		return 0
+	for w in _defs.waves:
+		if w.wave == round_no:
+			return _spawner.spawn_wave(w)
+	return 0
+
+
+## 战斗阶段：CAMP_CREEP（待机索敌 + 受击反击 + 拴在自己格子上）；否则 PASSIVE。
+func _set_defenders_fighting(on: bool) -> void:
+	if _board == null:
+		return
+	for u in _board.defenders():
+		var ai := UnitAI.of(u)
+		if ai == null:
+			continue
+		if not on:
+			_make_passive(u)
+			continue
+		var cell := _board.get_cell(str(u.get_meta(LegionBoard.META_CELL, "")))
+		ai.home_wc3 = cell.center if cell != null else Wc3Coords.godot_to_wc3_xy(u.global_position)
+		ai.leash_wc3 = DEFENDER_LEASH_WC3
+		ai.set_profile(UnitAI.Profile.CAMP_CREEP)
+
+
+## 结算：超时残怪移除、发收入、防守兵复位。
+func _settle_round(round_no: int) -> void:
+	var left := 0
+	if _spawner != null:
+		left = _spawner.creeps().size()
+		_spawner.clear()
+	var income := _economy.income_of(local_seat)
+	var stock := _local_stock()
+	if stock != null:
+		stock.add_gold(income)
+	var restored := _reset_defenders()
+	var text := "第 %d 波结算：+%d 金（收入）· 复位 %d · 重新摆出 %d" % [round_no, income, restored.x, restored.y]
+	if _clock.timed_out and left > 0:
+		text += " · 超时移除 %d 只" % left
+	_settle_note = text
+	_set_status(text)
+	AppLog.info(AppLog.Layer.GAME, "LegionMatchMode", text)
+
+
+## 活着的回格回满血，战死的在原格重新摆出。返回 (复位数, 重摆数)。
+func _reset_defenders() -> Vector2i:
+	var reset := 0
+	var respawned := 0
+	if _board == null or director == null:
+		return Vector2i.ZERO
+	for d in _board.records():
+		_restore_dead_food(d)
+		if d.is_alive():
+			var u := d.unit_node()
+			director.reset_mode_unit(u, d.cell.center)
+			UnitLife.set_life(u, UnitLife.get_max_life(u))
+			_make_passive(u)
+			reset += 1
+			continue
+		var corpse := d.unit_node()
+		if corpse != null:
+			director.remove_mode_unit(corpse)
+		var unit := director.spawn_mode_unit(d.unit_id, d.cell.center, d.seat, _defender_facing(d.seat))
+		if unit == null:
+			AppLog.warn(AppLog.Layer.GAME, "LegionMatchMode", "重新摆出失败 %s @ %s" % [d.unit_id, d.cell.key])
+			continue
+		_make_passive(unit)
+		_board.attach(d, unit)
+		respawned += 1
+	return Vector2i(reset, respawned)
+
+
+## 防守兵战死时 GameDirector 已退人口；战死的兵结算会回来，人口要一直占着。
+func _restore_dead_food(d: LegionBoard.Defender) -> void:
+	if d.food_restored or d.food <= 0 or d.is_alive() or d.seat != local_seat:
+		return
+	var u := d.unit_node()
+	if u != null and not bool(u.get_meta("food_released", false)):
+		return
+	var stock := _local_stock()
+	if stock != null:
+		stock.add_food_used(d.food)
+	d.food_restored = true
+
+
+func _watch_battle(delta: float) -> void:
+	if _clock.phase != LegionRoundClock.Phase.BATTLE:
+		return
+	_king.regen_tick(delta)
+	if _board != null:
+		for d in _board.records():
+			_restore_dead_food(d)
+	var fallen := _king.fallen_side()
+	if not fallen.is_empty():
+		_clock.end_match("%s 阵营国王阵亡" % fallen)
+
+
+func _refresh_mode_info() -> void:
+	if game_hud == null:
+		return
+	var text := "第 %d/%d 波 · %s" % [_clock.round_no, _clock.last_round, _clock.phase_name()]
+	if _clock.phase == LegionRoundClock.Phase.PREP or _clock.phase == LegionRoundClock.Phase.BATTLE:
+		text += " %d 秒" % ceili(maxf(_clock.time_left, 0.0))
+	if _clock.paused:
+		text += "（暂停）"
+	text += " · 收入 %d" % _economy.income_of(local_seat)
+	game_hud.set_mode_info(text)
 
 
 func _unit_name(unit: Node) -> String:
@@ -341,7 +506,7 @@ func command_card(primary: Node3D, _selected: Array) -> Array:
 	if _defs == null:
 		return []
 	if LegionBoard.is_defender(primary) and LegionBoard.seat_of(primary) == local_seat:
-		return LegionCommandCard.defender_card(_unit_name(primary), LegionBoard.sell_refund(primary, _round))
+		return LegionCommandCard.defender_card(_unit_name(primary), LegionBoard.sell_refund(primary, _clock.round_no))
 	return LegionCommandCard.main_card(_defs, _local_stock(), _placing_id)
 
 
@@ -376,7 +541,7 @@ func _attach_gm_section() -> void:
 		var gm := get_node_or_null("../GmDebugPanel") as GmDebugPanel
 		if gm != null and gm.is_node_ready():
 			_build_gm_section(gm)
-			_build_gm_stage2_section(gm)
+			_build_gm_round_section(gm)
 			return
 		await get_tree().process_frame
 	AppLog.warn(AppLog.Layer.GM, "LegionMatchMode", "未找到 GmDebugPanel，标定页未挂")
@@ -406,8 +571,8 @@ func _build_gm_section(gm: GmDebugPanel) -> void:
 	box.add_child(_gm_report)
 
 
-func _build_gm_stage2_section(gm: GmDebugPanel) -> void:
-	var box := gm.add_section("军团阶段 2（造兵 / 国王 / 系统怪）")
+func _build_gm_round_section(gm: GmDebugPanel) -> void:
+	var box := gm.add_section("军团回合（造兵 / 国王 / 波次）")
 	if box == null:
 		return
 	var wave_row := HBoxContainer.new()
@@ -415,13 +580,24 @@ func _build_gm_stage2_section(gm: GmDebugPanel) -> void:
 	box.add_child(wave_row)
 	_gm_wave = SpinBox.new()
 	_gm_wave.min_value = 1
-	_gm_wave.max_value = maxf(_defs.waves.size() if _defs != null else 1, 1)
+	_gm_wave.max_value = maxf(_clock.last_round, 1)
 	_gm_wave.value = 1
 	_gm_wave.prefix = "第"
 	_gm_wave.suffix = "波"
 	wave_row.add_child(_gm_wave)
-	_add_button(wave_row, "刷怪", _on_gm_spawn_wave)
-	_add_button(wave_row, "清怪", _on_gm_clear_creeps)
+	_add_button(wave_row, "跳到该波", _on_gm_jump_wave)
+	var round_row := HBoxContainer.new()
+	round_row.add_theme_constant_override("separation", 6)
+	box.add_child(round_row)
+	_add_button(round_row, "立即开战", _clock.force_battle)
+	_add_button(round_row, "立即结算", _clock.force_settle)
+	var pause_check := CheckBox.new()
+	pause_check.text = "暂停计时"
+	pause_check.toggled.connect(func(on: bool) -> void:
+		_clock.paused = on
+		_refresh_mode_info()
+	)
+	round_row.add_child(pause_check)
 	var res_row := HBoxContainer.new()
 	res_row.add_theme_constant_override("separation", 6)
 	box.add_child(res_row)
@@ -444,21 +620,15 @@ func _add_button(parent: Control, text: String, cb: Callable) -> void:
 	parent.add_child(b)
 
 
-func _on_gm_spawn_wave() -> void:
-	if _spawner == null or _defs == null:
+## 跳到第 N 波准备：清场上系统怪、防守兵复位，不发收入。
+func _on_gm_jump_wave() -> void:
+	if _clock.phase == LegionRoundClock.Phase.OVER:
 		return
 	var n := int(_gm_wave.value) if _gm_wave != null else 1
-	for w in _defs.waves:
-		if w.wave == n:
-			var queued := _spawner.spawn_wave(w)
-			_set_status("第 %d 波：排队 %d 只（%s）" % [n, queued, w.unit_id])
-			return
-
-
-func _on_gm_clear_creeps() -> void:
 	if _spawner != null:
 		_spawner.clear()
-		_set_status("已清除系统怪")
+	_reset_defenders()
+	_clock.jump_to(n)
 
 
 func _gm_add(gold: int, lumber: int) -> void:
@@ -471,10 +641,14 @@ func _gm_add(gold: int, lumber: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if _session != null:
+		_clock.tick(delta, _spawner == null or _spawner.is_idle())
+		_watch_battle(delta)
 	_gm_info_acc += delta
 	if _gm_info_acc < GM_INFO_INTERVAL:
 		return
 	_gm_info_acc = 0.0
+	_refresh_mode_info()
 	_refresh_gm_info()
 
 
@@ -482,6 +656,14 @@ func _refresh_gm_info() -> void:
 	if _gm_info == null or not _gm_info.is_visible_in_tree():
 		return
 	var lines: PackedStringArray = []
+	var phase_line := "第 %d/%d 波 · %s" % [_clock.round_no, _clock.last_round, _clock.phase_name()]
+	if _clock.phase == LegionRoundClock.Phase.PREP or _clock.phase == LegionRoundClock.Phase.BATTLE:
+		phase_line += " 剩 %.1f 秒" % maxf(_clock.time_left, 0.0)
+	elif _clock.phase == LegionRoundClock.Phase.OVER:
+		phase_line += "（%s）" % _clock.over_reason
+	lines.append(phase_line)
+	if _board != null:
+		lines.append("防守兵：名册 %d · 在场 %d" % [_board.records().size(), _board.defenders().size()])
 	lines.append("选中：%s" % _describe_unit(_primary if is_instance_valid(_primary) else null))
 	for side in ["L", "R"]:
 		var k := _king.king_of(side)

@@ -1,7 +1,8 @@
 class_name LegionBoard
 extends RefCounted
 
-## 建造格占用与防守兵记录（Logic）。格子来自 cells.txt；一格一个防守兵。
+## 建造格占用与防守兵名册（Logic）。格子来自 cells.txt；一格一个防守兵。
+## 名册按格子记兵种、席位、建造回合、累计投入金币；单位战死后记录仍在，结算时照记录重新摆出。
 ## 防守兵 meta（复位、出售、兵力都读）：席位、格子键、建造回合、累计投入金币。
 ## 出售规则（策划案 5.4）：本回合建造退 100% 投入，旧单位退 50%。
 
@@ -25,10 +26,33 @@ class Cell:
 	var buildable: bool = true
 
 
+class Defender:
+	extends RefCounted
+	var cell: Cell = null
+	var unit_id: String = ""
+	var seat: int = -1
+	var build_round: int = 0
+	var invested: int = 0
+	var food: int = 0
+	## 场上单位；战死并被移除后为 null（用 unit_node() 取，免得读到已释放对象）
+	var unit: Variant = null
+	## 战死时 GameDirector 已退掉人口，模式补回后置 true；重新摆出时清掉
+	var food_restored: bool = false
+
+	func unit_node() -> Node3D:
+		if unit == null or not is_instance_valid(unit):
+			return null
+		return unit as Node3D
+
+	func is_alive() -> bool:
+		var u := unit_node()
+		return u != null and CombatQuery.is_alive_in_world(u)
+
+
 var _cells_by_region: Dictionary[String, Array] = {}
 var _cells_by_key: Dictionary[String, Cell] = {}
-## 格子键 → 防守兵
-var _occupant: Dictionary[String, Node3D] = {}
+## 格子键 → 名册记录
+var _roster: Dictionary[String, Defender] = {}
 
 
 static func from_rows(rows: Array[Dictionary]) -> LegionBoard:
@@ -69,42 +93,77 @@ func get_cell(key: String) -> Cell:
 	return _cells_by_key.get(key) as Cell
 
 
+## 区域格心的外接矩形（wc3）；没有格子时 Rect2()。
+func region_rect(region: String) -> Rect2:
+	var cells: Array = _cells_by_region.get(region, [])
+	if cells.is_empty():
+		return Rect2()
+	var r := Rect2((cells[0] as Cell).center, Vector2.ZERO)
+	for c in cells:
+		r = r.expand((c as Cell).center)
+	return r
+
+
+func record_at(key: String) -> Defender:
+	return _roster.get(key) as Defender
+
+
+## 格子上的活单位；空格或兵已战死时 null。
 func occupant(key: String) -> Node3D:
-	var u: Variant = _occupant.get(key)
-	if u == null:
-		return null
-	if not is_instance_valid(u):
-		_occupant.erase(key)
-		return null
-	return u as Node3D
+	var d := record_at(key)
+	return d.unit_node() if d != null else null
 
 
+## 名册里有记录就不算空（战死的兵结算时会回来）。
 func is_free(key: String) -> bool:
-	return occupant(key) == null
+	return not _roster.has(key)
 
 
 ## 登记防守兵并写 meta。
-func place(unit: Node3D, cell: Cell, seat: int, build_round: int, invested_gold: int) -> void:
-	_occupant[cell.key] = unit
-	unit.set_meta(META_SEAT, seat)
-	unit.set_meta(META_CELL, cell.key)
-	unit.set_meta(META_BUILD_ROUND, build_round)
-	unit.set_meta(META_INVESTED, invested_gold)
+func place(unit: Node3D, cell: Cell, seat: int, build_round: int, invested_gold: int, food: int = 0) -> Defender:
+	var d := Defender.new()
+	d.cell = cell
+	d.unit_id = CombatQuery.type_id_of(unit)
+	d.seat = seat
+	d.build_round = build_round
+	d.invested = invested_gold
+	d.food = food
+	_roster[cell.key] = d
+	attach(d, unit)
+	return d
+
+
+## 把（重新摆出的）单位挂回名册记录。
+func attach(d: Defender, unit: Node3D) -> void:
+	d.unit = unit
+	d.food_restored = false
+	unit.set_meta(META_SEAT, d.seat)
+	unit.set_meta(META_CELL, d.cell.key)
+	unit.set_meta(META_BUILD_ROUND, d.build_round)
+	unit.set_meta(META_INVESTED, d.invested)
 
 
 func release(unit: Node3D) -> void:
 	if unit == null:
 		return
 	var key := str(unit.get_meta(META_CELL, ""))
-	if not key.is_empty() and _occupant.get(key) == unit:
-		_occupant.erase(key)
+	var d := record_at(key)
+	if d != null and d.unit_node() == unit:
+		_roster.erase(key)
+
+
+func records() -> Array[Defender]:
+	var out: Array[Defender] = []
+	for d in _roster.values():
+		out.append(d as Defender)
+	return out
 
 
 func defenders() -> Array[Node3D]:
 	var out: Array[Node3D] = []
-	for key in _occupant.keys():
-		var u := occupant(key)
-		if u != null:
+	for d in _roster.values():
+		var u := (d as Defender).unit_node()
+		if u != null and (d as Defender).is_alive():
 			out.append(u)
 	return out
 

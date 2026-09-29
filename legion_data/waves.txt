@@ -1,4 +1,5 @@
 # model_id 是自定规格：策划案不给怪物模型，只借原版野怪模板的外观；数值仍以本表为准。
+# interval 是自定规格：每路刷完这一波用的秒数，同路相邻两只间隔 interval / count。
 wave,count,hp,atk,as,rng,at,df,interval,force,model_id
 1,6,41,4,1.2,90,普通,轻甲,8,80,nkob
 2,6,56,6,1.2,90,穿刺,中甲,8,120,ngno

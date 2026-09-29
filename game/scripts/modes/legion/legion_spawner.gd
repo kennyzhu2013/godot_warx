@@ -3,13 +3,14 @@ extends Node
 
 ## 系统怪（Logic）：每个启用玩家席位的出怪点按间隔刷怪，分两段走：出怪点 → 漏怪点 → 本阵营国王面前。
 ## owner 是进攻方电脑席（打左路的怪归右电脑席），不用中立 owner。
-## 阶段 2 只走路不打（attack_move = false，怪的 AI 设为 PASSIVE）；阶段 3 打开攻击移动。
-## 自定规格：同波相邻两只间隔 SPAWN_GAP_SEC；到点半径 ARRIVE_RADIUS；
-## 连续 STALL_SEC 几乎不动也算到点，被挡住时不会卡在第一段。
+## attack_move = false：只走路（阶段 2 验收用）；true：两段都是攻击移动，到国王面前后直接攻击国王。
+## 怪的 AI 一律 PASSIVE，索敌交给攻击移动，免得 AI 反击把怪拉离路线。
+## 自定规格：waves.txt 的 interval = 每路刷完这一波用的秒数，同路相邻两只间隔 interval / count
+## （不小于 MIN_GAP_SEC）；到点半径 ARRIVE_RADIUS；不在交战时连续 STALL_SEC 几乎不动也算到点。
 
 signal creep_spawned(unit: Node3D)
 
-const SPAWN_GAP_SEC := 0.8
+const MIN_GAP_SEC := 0.3
 const SPAWN_JITTER := 32.0
 const ARRIVE_RADIUS := 96.0
 const STALL_SEC := 2.0
@@ -39,6 +40,8 @@ class Pending:
 
 
 var attack_move: bool = false
+## side -> 国王单位（模式注入，攻击国王用）
+var king_of_side: Callable = Callable()
 var _director: GameDirector = null
 var _seats: LegionSeats = null
 var _creeps: Array[Creep] = []
@@ -58,6 +61,7 @@ func spawn_wave(row: LegionUnitDefs.WaveRow) -> int:
 	if _seats == null or row == null or row.count <= 0:
 		return 0
 	var queued := 0
+	var gap := maxf(row.interval / row.count, MIN_GAP_SEC)
 	for lane in _seats.enabled_seats():
 		if not lane.has_region() or lane.spawn == Vector2.INF:
 			continue
@@ -67,10 +71,20 @@ func spawn_wave(row: LegionUnitDefs.WaveRow) -> int:
 			p.unit_id = row.unit_id
 			p.lane = lane
 			p.owner = owner
-			p.due = _clock + i * SPAWN_GAP_SEC
+			p.due = _clock + i * gap
 			_pending.append(p)
 			queued += 1
 	return queued
+
+
+## 排队的都已刷出，且场上没有活着的系统怪。
+func is_idle() -> bool:
+	if not _pending.is_empty():
+		return false
+	for c in _creeps:
+		if is_instance_valid(c.unit) and CombatQuery.is_alive_in_world(c.unit):
+			return false
+	return true
 
 
 func creeps() -> Array[Node3D]:
@@ -142,10 +156,9 @@ func _spawn_one(p: Pending) -> void:
 	if unit == null:
 		AppLog.warn(AppLog.Layer.GAME, "LegionSpawner", "刷怪失败 %s @ %s" % [p.unit_id, at])
 		return
-	if not attack_move:
-		var ai := UnitAI.of(unit)
-		if ai != null:
-			ai.set_profile(UnitAI.Profile.PASSIVE)
+	var ai := UnitAI.of(unit)
+	if ai != null:
+		ai.set_profile(UnitAI.Profile.PASSIVE)
 	var c := Creep.new()
 	c.unit = unit
 	c.lane = p.lane
@@ -163,8 +176,14 @@ func _tick_creeps(delta: float) -> void:
 			continue
 		i += 1
 		if c.leg == Leg.DONE:
+			if attack_move:
+				_keep_attacking_king(c)
 			continue
 		var pos := Wc3Coords.godot_to_wc3_xy(c.unit.global_position)
+		if _is_fighting(c.unit):
+			c.still = 0.0
+			c.last_pos = Vector2.INF
+			continue
 		if c.last_pos != Vector2.INF and pos.distance_to(c.last_pos) < STALL_DIST:
 			c.still += delta
 		else:
@@ -185,6 +204,8 @@ func _issue_leg(c: Creep, leg: int) -> void:
 		Leg.TO_KING:
 			c.goal = _king_front(c.lane)
 		_:
+			if attack_move:
+				_keep_attacking_king(c)
 			return
 	var router := _director.get_command_router()
 	if router == null or c.goal == Vector2.INF:
@@ -194,6 +215,23 @@ func _issue_leg(c: Creep, leg: int) -> void:
 		router.issue_attack_move([c.unit], c.goal, UnitOrder.Source.UNKNOWN)
 	else:
 		router.issue_move_to_wc3([c.unit], c.goal, UnitOrder.Source.UNKNOWN)
+
+
+## 站定后：没在打别人就打本路国王。
+func _keep_attacking_king(c: Creep) -> void:
+	if king_of_side.is_null() or _is_fighting(c.unit):
+		return
+	var king := king_of_side.call(c.lane.side) as Node3D
+	if king == null or not CombatQuery.is_alive_in_world(king):
+		return
+	var router := _director.get_command_router()
+	if router != null:
+		router.issue_attack_target([c.unit], king, UnitOrder.Source.UNKNOWN)
+
+
+func _is_fighting(unit: Node3D) -> bool:
+	var ac := unit.get_node_or_null("AttackController") as AttackController
+	return ac != null and ac.is_active() and ac.get_target() != null
 
 
 func _king_front(lane: LegionSeats.Seat) -> Vector2:
