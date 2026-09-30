@@ -127,16 +127,16 @@ func tick(delta: float) -> void:
 		f["elapsed"] = float(f.get("elapsed", 0.0)) + delta
 		if float(f["elapsed"]) >= MAX_FLIGHT_SEC:
 			f["visual_only"] = true
-			_resolve_flight(f)
 			_flights.remove_at(i)
+			_resolve_flight(f)
 			continue
-		var target: Node3D = f.get("target") as Node3D
-		if target == null or not is_instance_valid(target):
+		var target := _live_node(f.get("target"))
+		if target == null:
 			f["visual_only"] = true
-			_resolve_flight(f)
 			_flights.remove_at(i)
+			_resolve_flight(f)
 			continue
-		var impact_z := float(f.get("impact_z", CombatQuery.impact_z_wc3(f.get("attacker") as Node)))
+		var impact_z := float(f.get("impact_z", CombatQuery.impact_z_wc3(_live_node(f.get("attacker")))))
 		var to_full := Wc3Coords.godot_to_wc3(target.global_position)
 		var to_wc3 := Vector3(to_full.x, to_full.y, to_full.z + impact_z)
 		f["to_wc3"] = to_wc3
@@ -146,8 +146,8 @@ func tick(delta: float) -> void:
 		var dist := pos.distance_to(to_wc3)
 		if dist <= float(f.get("hit_radius_wc3", HIT_RADIUS_WC3)) or dist <= step:
 			f["pos_wc3"] = to_wc3
-			_resolve_flight(f)
 			_flights.remove_at(i)
+			_resolve_flight(f)
 			continue
 		f["pos_wc3"] = pos.move_toward(to_wc3, step)
 		# 刷新估计剩余时长，供 Present 超时对齐
@@ -175,11 +175,18 @@ func _remove_flight(id: int) -> void:
 			return
 
 
+## 攻击者 / 目标可能在飞行途中被释放（尸体移除、出售、结算清场）；已释放的对象不能 as 转换，否则报错且这发弹道永远留在列表里。
+static func _live_node(v: Variant) -> Node3D:
+	if v == null or not is_instance_valid(v):
+		return null
+	return v as Node3D
+
+
 func _resolve_flight(f: Dictionary) -> void:
 	f["alive"] = false
 	var visual_only := bool(f.get("visual_only", false))
-	var attacker: Node3D = f.get("attacker") as Node3D
-	var target: Node3D = f.get("target") as Node3D
+	var attacker := _live_node(f.get("attacker"))
+	var target := _live_node(f.get("target"))
 	if visual_only or pipeline == null:
 		projectile_resolved.emit(
 			{"ok": false, "visual_only": true, "id": int(f.get("id", -1)), "attacker": attacker, "target": target}
